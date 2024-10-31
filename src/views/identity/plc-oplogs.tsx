@@ -7,13 +7,14 @@ import { resolveHandleViaAppView } from '~/api/queries/handle';
 import { didString, handleString, serviceUrlString } from '~/api/types/strings';
 import { DID_OR_HANDLE_RE, isDid } from '~/api/utils/strings';
 
+import { useTitle } from '~/lib/navigation/router';
+import { dequal } from '~/lib/utils/dequal';
 import { createQuery } from '~/lib/utils/query';
 import { asIdentifier, useSearchParams } from '~/lib/utils/search-params';
 
 import CircularProgressView from '~/components/circular-progress-view';
 import DiffTable from '~/components/diff-table';
 import ErrorView from '~/components/error-view';
-import { dequal } from '~/lib/utils/dequal';
 
 const PlcOperationLogPage = () => {
 	const [params, setParams] = useSearchParams({
@@ -43,6 +44,11 @@ const PlcOperationLogPage = () => {
 			return v.parse(plcLogEntries, json);
 		},
 	);
+
+	useTitle(() => {
+		const ident = params.q;
+		return `View PLC operation logs` + (ident ? ` — ${ident}` : ``) + ` — boat`;
+	});
 
 	return (
 		<>

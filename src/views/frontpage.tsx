@@ -1,5 +1,7 @@
 import { Component, ComponentProps } from 'solid-js';
 
+import { useTitle } from '~/lib/navigation/router';
+
 import HistoryIcon from '~/components/ic-icons/baseline-history';
 import ArchiveOutlinedIcon from '~/components/ic-icons/outline-archive';
 import BookmarksOutlinedIcon from '~/components/ic-icons/outline-bookmarks';
@@ -125,6 +127,8 @@ const Frontpage = () => {
 			</>
 		);
 	});
+
+	useTitle(() => `boat`);
 
 	return (
 		<>

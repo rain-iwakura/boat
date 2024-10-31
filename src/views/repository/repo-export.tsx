@@ -10,6 +10,7 @@ import { resolveHandleViaAppView, resolveHandleViaPds } from '~/api/queries/hand
 import { serviceUrlString } from '~/api/types/strings';
 import { DID_OR_HANDLE_RE, isDid } from '~/api/utils/strings';
 
+import { useTitle } from '~/lib/navigation/router';
 import { makeAbortable } from '~/lib/utils/abortable';
 import { formatBytes } from '~/lib/utils/intl/bytes';
 
@@ -127,6 +128,8 @@ const RepoExportPage = () => {
 			logger.log(`Finished`);
 		}
 	};
+
+	useTitle(() => `Export repository — boat`);
 
 	return (
 		<>

@@ -5,14 +5,15 @@ import { At } from '@atcute/client/lexicons';
 
 import { getDidDocument } from '~/api/queries/did-doc';
 import { resolveHandleViaAppView } from '~/api/queries/handle';
+import { serviceUrlString } from '~/api/types/strings';
 import { DID_OR_HANDLE_RE, isDid } from '~/api/utils/strings';
 
+import { useTitle } from '~/lib/navigation/router';
 import { createQuery } from '~/lib/utils/query';
 import { asIdentifier, useSearchParams } from '~/lib/utils/search-params';
 
 import CircularProgressView from '~/components/circular-progress-view';
 import ErrorView from '~/components/error-view';
-import { serviceUrlString } from '~/api/types/strings';
 
 const DidLookupPage = () => {
 	const [params, setParams] = useSearchParams({
@@ -34,6 +35,11 @@ const DidLookupPage = () => {
 			return doc;
 		},
 	);
+
+	useTitle(() => {
+		const ident = params.q;
+		return `View identity info` + (ident ? ` — ${ident}` : ``) + ` — boat`;
+	});
 
 	return (
 		<>

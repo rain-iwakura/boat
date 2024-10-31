@@ -5,6 +5,7 @@ import { iterateAtpRepo } from '@atcute/car';
 import { writeTarEntry } from '@mary/tar';
 
 import { createDropZone } from '~/lib/hooks/dropzone';
+import { useTitle } from '~/lib/navigation/router';
 import { makeAbortable } from '~/lib/utils/abortable';
 
 import Logger, { createLogger } from '~/components/logger';
@@ -151,6 +152,8 @@ const UnpackCarPage = () => {
 			},
 		);
 	};
+
+	useTitle(() => `Unpack CAR file — boat`);
 
 	return (
 		<>
