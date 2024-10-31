@@ -138,7 +138,7 @@ const Frontpage = () => {
 
 			<hr class="mx-4 border-gray-200" />
 			<div class="p-4 pb-8">
-				<a href="https://github.com/atcute-js/boat" class="font-medium text-purple-800 underline">
+				<a href="https://github.com/mary-ext/boat" class="font-medium text-purple-800 underline">
 					source code
 				</a>
 			</div>
