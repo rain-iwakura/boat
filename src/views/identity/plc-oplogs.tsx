@@ -65,6 +65,11 @@ const PlcOperationLogPage = () => {
 				<label class="flex flex-col gap-2">
 					<span class="font-semibold text-gray-600">Handle or DID identifier*</span>
 					<input
+						ref={(node) => {
+							if (!params.q) {
+								setTimeout(() => node.focus(), 1);
+							}
+						}}
 						type="text"
 						name="ident"
 						required
