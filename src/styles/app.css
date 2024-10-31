@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	body {
+		@apply z-0 min-h-dvh overflow-y-scroll bg-gray-100 text-sm;
+		background-image: url(../assets/dotted-background.svg);
+		background-size: 220px 220px;
+		background-position: center;
+		background-attachment: fixed;
+	}
+
+	[hidden] {
+		display: none !important;
+	}
+}
