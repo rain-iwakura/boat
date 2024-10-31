@@ -100,9 +100,8 @@ const PlcOperationLogPage = () => {
 					{(plcLogs) => {
 						const lastActiveEntry = plcLogs.findLast((entry) => !entry.nullified);
 
-						const grouped = Map.groupBy(createOperationHistory(plcLogs).reverse(), (item) => item.orig)
-							.entries()
-							.toArray();
+						const opHistory = createOperationHistory(plcLogs).reverse();
+						const grouped = Array.from(groupBy(opHistory, (item) => item.orig));
 
 						const renderDiffItem = (diff: DiffEntry) => {
 							const nullified = diff.orig.nullified;
@@ -312,6 +311,25 @@ const PlcOperationLogPage = () => {
 };
 
 export default PlcOperationLogPage;
+
+const groupBy = <K, T>(items: T[], keyFn: (item: T, index: number) => K): Map<K, T[]> => {
+	const map = new Map<K, T[]>();
+
+	for (let idx = 0, len = items.length; idx < len; idx++) {
+		const val = items[idx];
+		const key = keyFn(val, idx);
+
+		const list = map.get(key);
+
+		if (list !== undefined) {
+			list.push(val);
+		} else {
+			map.set(key, [val]);
+		}
+	}
+
+	return map;
+};
 
 type DiffEntry =
 	| {
