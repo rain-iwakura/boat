@@ -17,11 +17,11 @@ const DiffTable = (props: DiffTableProps) => {
 							<div hidden={prev !== next} class="px-2 py-1">
 								{next}
 							</div>
-							<div hidden={prev === next || prev === null} class="bg-red-200 px-2 py-1">
-								{prev}
-							</div>
 							<div hidden={prev === next || next === null} class="bg-green-200 px-2 py-1">
 								{next}
+							</div>
+							<div hidden={prev === next || prev === null} class="bg-red-200 px-2 py-1">
+								{prev}
 							</div>
 						</div>
 					</>
