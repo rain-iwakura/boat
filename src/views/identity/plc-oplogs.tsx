@@ -287,7 +287,7 @@ const PlcOperationLogPage = () => {
 													<div class="absolute bottom-[-1.875rem] top-[1.875rem] border-l border-gray-300" />
 												)}
 												{multiple && (
-													<div class="absolute left-[0.21875rem] top-[1.875rem] h-[1.5rem] w-[1.375rem] rounded-bl-2xl border-b border-l border-gray-300" />
+													<div class="absolute left-1 top-[1.875rem] h-[1.5rem] w-[1.375rem] rounded-bl-2xl border-b border-l border-gray-300" />
 												)}
 											</div>
 
