@@ -119,10 +119,10 @@ const PlcOperationLogPage = () => {
 							let title = 'Unknown log entry';
 							let node: JSX.Element;
 
-							if (diff.type === 'account_created') {
-								title = `Account created`;
-							} else if (diff.type === 'account_tombstoned') {
-								title = `Account tombstoned`;
+							if (diff.type === 'identity_created') {
+								title = `Identity created`;
+							} else if (diff.type === 'identity_tombstoned') {
+								title = `Identity tombstoned`;
 							} else if (diff.type === 'handle_added') {
 								const handle = diff.handle;
 
@@ -343,7 +343,7 @@ const groupBy = <K, T>(items: T[], keyFn: (item: T, index: number) => K): Map<K,
 
 type DiffEntry =
 	| {
-			type: 'account_created';
+			type: 'identity_created';
 			orig: PlcLogEntry;
 			nullified: boolean;
 			at: string;
@@ -353,7 +353,7 @@ type DiffEntry =
 			services: Record<string, { type: string; endpoint: string }>;
 	  }
 	| {
-			type: 'account_tombstoned';
+			type: 'identity_tombstoned';
 			orig: PlcLogEntry;
 			nullified: boolean;
 			at: string;
@@ -458,7 +458,7 @@ const createOperationHistory = (entries: PlcLogEntry[]): DiffEntry[] => {
 
 		if (op.type === 'create') {
 			history.push({
-				type: 'account_created',
+				type: 'identity_created',
 				orig: entry,
 				nullified: entry.nullified,
 				at: entry.createdAt,
@@ -482,7 +482,7 @@ const createOperationHistory = (entries: PlcLogEntry[]): DiffEntry[] => {
 
 			if (!prevOp) {
 				history.push({
-					type: 'account_created',
+					type: 'identity_created',
 					orig: entry,
 					nullified: entry.nullified,
 					at: entry.createdAt,
@@ -658,7 +658,7 @@ const createOperationHistory = (entries: PlcLogEntry[]): DiffEntry[] => {
 			}
 		} else if (op.type === 'plc_tombstone') {
 			history.push({
-				type: 'account_tombstoned',
+				type: 'identity_tombstoned',
 				orig: entry,
 				nullified: entry.nullified,
 				at: entry.createdAt,
