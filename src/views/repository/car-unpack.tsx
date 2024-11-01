@@ -161,7 +161,7 @@ const UnpackCarPage = () => {
 				<h1 class="text-lg font-bold text-purple-800">Unpack CAR file</h1>
 				<p class="text-gray-600">Extract a repository archive into a folder</p>
 			</div>
-			<hr class="mx-4 border-gray-200" />
+			<hr class="mx-4 border-gray-300" />
 
 			<div class="p-4">
 				<fieldset
@@ -190,7 +190,7 @@ const UnpackCarPage = () => {
 					</div>
 				</fieldset>
 			</div>
-			<hr class="mx-4 border-gray-200" />
+			<hr class="mx-4 border-gray-300" />
 
 			<Logger logger={logger} />
 		</>

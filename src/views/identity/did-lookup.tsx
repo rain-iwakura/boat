@@ -47,7 +47,7 @@ const DidLookupPage = () => {
 				<h1 class="text-lg font-bold text-purple-800">View identity info</h1>
 				<p class="text-gray-600">Look up an account's DID document</p>
 			</div>
-			<hr class="mx-4 border-gray-200" />
+			<hr class="mx-4 border-gray-300" />
 
 			<form
 				onSubmit={(ev) => {
@@ -73,7 +73,7 @@ const DidLookupPage = () => {
 						pattern={DID_OR_HANDLE_RE.source}
 						placeholder="paul.bsky.social"
 						value={params.q ?? ''}
-						class="rounded border border-gray-300 px-3 py-2 text-sm outline-2 -outline-offset-1 outline-purple-600 placeholder:text-gray-400 focus:outline"
+						class="rounded border border-gray-400 px-3 py-2 text-sm outline-2 -outline-offset-1 outline-purple-600 placeholder:text-gray-400 focus:outline"
 					/>
 				</label>
 
@@ -86,8 +86,7 @@ const DidLookupPage = () => {
 					</button>
 				</div>
 			</form>
-
-			<hr class="mx-4 border-gray-200" />
+			<hr class="mx-4 border-gray-300" />
 
 			<Switch>
 				<Match when={query.isPending}>

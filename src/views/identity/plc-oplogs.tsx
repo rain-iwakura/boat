@@ -56,7 +56,7 @@ const PlcOperationLogPage = () => {
 				<h1 class="text-lg font-bold text-purple-800">View PLC operation logs</h1>
 				<p class="text-gray-600">Show history of a did:plc identity</p>
 			</div>
-			<hr class="mx-4 border-gray-200" />
+			<hr class="mx-4 border-gray-300" />
 
 			<form
 				onSubmit={(ev) => {
@@ -82,7 +82,7 @@ const PlcOperationLogPage = () => {
 						pattern={DID_OR_HANDLE_RE.source}
 						placeholder="paul.bsky.social"
 						value={params.q ?? ''}
-						class="rounded border border-gray-300 px-3 py-2 text-sm outline-2 -outline-offset-1 outline-purple-600 placeholder:text-gray-400 focus:outline"
+						class="rounded border border-gray-400 px-3 py-2 text-sm outline-2 -outline-offset-1 outline-purple-600 placeholder:text-gray-400 focus:outline"
 					/>
 				</label>
 
@@ -95,8 +95,7 @@ const PlcOperationLogPage = () => {
 					</button>
 				</div>
 			</form>
-
-			<hr class="mx-4 border-gray-200" />
+			<hr class="mx-4 border-gray-300" />
 
 			<Switch>
 				<Match when={query.isPending}>

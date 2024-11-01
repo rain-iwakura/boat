@@ -137,7 +137,7 @@ const RepoExportPage = () => {
 				<h1 class="text-lg font-bold text-purple-800">Export repository</h1>
 				<p class="text-gray-600">Download an archive of an account's repository</p>
 			</div>
-			<hr class="mx-4 border-gray-200" />
+			<hr class="mx-4 border-gray-300" />
 
 			<form
 				onSubmit={(ev) => {
@@ -187,7 +187,7 @@ const RepoExportPage = () => {
 							required
 							pattern={DID_OR_HANDLE_RE.source}
 							placeholder="paul.bsky.social"
-							class="rounded border border-gray-300 px-3 py-2 text-sm outline-2 -outline-offset-1 outline-purple-600 placeholder:text-gray-400 focus:outline"
+							class="rounded border border-gray-400 px-3 py-2 text-sm outline-2 -outline-offset-1 outline-purple-600 placeholder:text-gray-400 focus:outline"
 						/>
 					</label>
 
@@ -207,7 +207,7 @@ const RepoExportPage = () => {
 									input.setCustomValidity('');
 								}
 							}}
-							class="rounded border border-gray-300 px-3 py-2 text-sm outline-2 -outline-offset-1 outline-purple-600 placeholder:text-gray-400 focus:outline"
+							class="rounded border border-gray-400 px-3 py-2 text-sm outline-2 -outline-offset-1 outline-purple-600 placeholder:text-gray-400 focus:outline"
 						/>
 					</label>
 
@@ -221,7 +221,7 @@ const RepoExportPage = () => {
 					</div>
 				</fieldset>
 			</form>
-			<hr class="mx-4 border-gray-200" />
+			<hr class="mx-4 border-gray-300" />
 
 			<Logger logger={logger} />
 		</>

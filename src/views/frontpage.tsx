@@ -136,11 +136,11 @@ const Frontpage = () => {
 				<h1 class="text-lg font-bold text-purple-800">boat</h1>
 				<p class="text-gray-600">handy online tools for AT Protocol</p>
 			</div>
-			<hr class="mx-4 border-gray-200" />
+			<hr class="mx-4 border-gray-300" />
 
 			<div class="flex grow flex-col pb-2">{nodes}</div>
 
-			<hr class="mx-4 border-gray-200" />
+			<hr class="mx-4 border-gray-300" />
 			<div class="p-4 pb-8">
 				<a href="https://github.com/mary-ext/boat" class="font-medium text-purple-800 underline">
 					source code
