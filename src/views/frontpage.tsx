@@ -52,7 +52,7 @@ const Frontpage = () => {
 				},
 				{
 					name: `Unpack CAR file`,
-					description: `Extract a repository archive into a folder`,
+					description: `Extract a repository archive into a tarball`,
 					href: '/car-unpack',
 					icon: DirectionsCarOutlinedIcon,
 				},
