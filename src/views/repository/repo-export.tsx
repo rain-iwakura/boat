@@ -19,7 +19,7 @@ import Logger, { createLogger } from '~/components/logger';
 const RepoExportPage = () => {
 	const logger = createLogger();
 
-	const [getSignal] = makeAbortable();
+	const [getSignal, cleanup] = makeAbortable();
 	const [pending, setPending] = createSignal(false);
 
 	const mutate = async ({
@@ -157,6 +157,7 @@ const RepoExportPage = () => {
 								return;
 							}
 
+							cleanup();
 							setPending(false);
 						},
 						(err) => {
@@ -164,6 +165,7 @@ const RepoExportPage = () => {
 								return;
 							}
 
+							cleanup();
 							setPending(false);
 							logger.error(`Critical error: ${err}`);
 						},

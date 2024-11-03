@@ -24,7 +24,7 @@ const yieldToIdle =
 const UnpackCarPage = () => {
 	const logger = createLogger();
 
-	const [getSignal] = makeAbortable();
+	const [getSignal, cleanup] = makeAbortable();
 	const [pending, setPending] = createSignal(false);
 
 	const { ref: dropRef, isDropping } = createDropZone({
@@ -136,6 +136,7 @@ const UnpackCarPage = () => {
 					return;
 				}
 
+				cleanup();
 				setPending(false);
 			},
 			(err) => {
@@ -143,6 +144,7 @@ const UnpackCarPage = () => {
 					return;
 				}
 
+				cleanup();
 				setPending(false);
 				logger.error(`Critical error: ${err}\nFile might be malformed, or might not be a CAR archive`);
 			},
