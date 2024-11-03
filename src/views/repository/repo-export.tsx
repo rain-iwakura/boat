@@ -116,7 +116,11 @@ const RepoExportPage = () => {
 			}
 
 			logger.log(`CAR file downloaded (${formatBytes(size)})`);
-			await writable.close();
+
+			{
+				using _progress = logger.progress(`Flushing writes`);
+				await writable.close();
+			}
 
 			logger.log(`Finished`);
 		}

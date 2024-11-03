@@ -116,7 +116,11 @@ const UnpackCarPage = () => {
 			logger.log(`CAR file has no records`);
 		} else {
 			logger.log(`${count} records extracted`);
-			await writable.close();
+
+			{
+				using _progress = logger.progress(`Flushing writes`);
+				await writable.close();
+			}
 
 			logger.log(`Finished!`);
 		}
