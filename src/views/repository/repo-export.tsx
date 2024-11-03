@@ -64,7 +64,7 @@ const RepoExportPage = () => {
 			using _progress = logger.progress(`Waiting for the user`);
 
 			fd = await showSaveFilePicker({
-				suggestedName: `${identifier}-${new Date().toISOString()}.car`,
+				suggestedName: `repo-${identifier}-${new Date().toISOString()}.car`,
 
 				// @ts-expect-error: ponyfill doesn't have the full typings
 				id: 'repo-export',
