@@ -9,6 +9,11 @@ const routes: RouteDefinition[] = [
 	},
 
 	{
+		path: '/blob-export',
+		component: lazy(() => import('./views/blob/blob-export')),
+	},
+
+	{
 		path: '/did-lookup',
 		component: lazy(() => import('./views/identity/did-lookup')),
 	},
