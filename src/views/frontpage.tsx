@@ -69,7 +69,7 @@ const Frontpage = () => {
 			items: [
 				{
 					name: `Export blobs`,
-					description: `Download all blobs from an account`,
+					description: `Download all blobs from an account into a tarball`,
 					href: '/blob-export',
 					icon: ArchiveOutlinedIcon,
 				},

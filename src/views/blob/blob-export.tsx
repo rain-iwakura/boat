@@ -206,7 +206,7 @@ const BlobExportPage = () => {
 		<>
 			<div class="p-4">
 				<h1 class="text-lg font-bold text-purple-800">Export blobs</h1>
-				<p class="text-gray-600">Download all blobs from an account</p>
+				<p class="text-gray-600">Download all blobs from an account into a tarball</p>
 			</div>
 			<hr class="mx-4 border-gray-300" />
 
