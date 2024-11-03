@@ -116,14 +116,14 @@ const RepoExportPage = () => {
 			}
 
 			logger.log(`CAR file downloaded (${formatBytes(size)})`);
-
-			{
-				using _progress = logger.progress(`Flushing writes`);
-				await writable.close();
-			}
-
-			logger.log(`Finished`);
 		}
+
+		{
+			using _progress = logger.progress(`Flushing writes`);
+			await writable.close();
+		}
+
+		logger.log(`Finished`);
 	};
 
 	useTitle(() => `Export repository — boat`);
