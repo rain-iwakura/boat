@@ -61,35 +61,31 @@ const RepoExportPage = () => {
 		let fd: FileSystemFileHandle | undefined;
 
 		{
-			const progress = logger.progress(`Waiting for the user`);
+			using _progress = logger.progress(`Waiting for the user`);
 
-			try {
-				fd = await showSaveFilePicker({
-					suggestedName: `${identifier}-${new Date().toISOString()}.car`,
+			fd = await showSaveFilePicker({
+				suggestedName: `${identifier}-${new Date().toISOString()}.car`,
 
-					// @ts-expect-error: ponyfill doesn't have the full typings
-					id: 'repo-export',
-					startIn: 'downloads',
-					types: [
-						{
-							description: 'CAR archive file',
-							accept: { 'application/vnd.ipld.car': ['.car'] },
-						},
-					],
-				}).catch((err) => {
-					console.warn(err);
+				// @ts-expect-error: ponyfill doesn't have the full typings
+				id: 'repo-export',
+				startIn: 'downloads',
+				types: [
+					{
+						description: 'CAR archive file',
+						accept: { 'application/vnd.ipld.car': ['.car'] },
+					},
+				],
+			}).catch((err) => {
+				console.warn(err);
 
-					if (err instanceof DOMException && err.name === 'AbortError') {
-						logger.warn(`Opened the file picker, but it was aborted`);
-					} else {
-						logger.warn(`Something went wrong when opening the file picker`);
-					}
+				if (err instanceof DOMException && err.name === 'AbortError') {
+					logger.warn(`Opened the file picker, but it was aborted`);
+				} else {
+					logger.warn(`Something went wrong when opening the file picker`);
+				}
 
-					return undefined;
-				});
-			} finally {
-				progress.destroy();
-			}
+				return undefined;
+			});
 
 			if (fd === undefined) {
 				// We already handled the errors above
@@ -100,26 +96,23 @@ const RepoExportPage = () => {
 		const writable = await fd.createWritable();
 
 		{
-			const progress = logger.progress(`Downloading CAR file`);
+			using progress = logger.progress(`Downloading CAR file`);
+
+			const repoUrl = new URL(`/xrpc/com.atproto.sync.getRepo?did=${did}`, service);
+			const response = await fetch(repoUrl, { signal: signal });
+
+			if (!response.ok || !response.body) {
+				logger.error(`Failed to retrieve CAR file`);
+				return;
+			}
 
 			let size = 0;
-			try {
-				const repoUrl = new URL(`/xrpc/com.atproto.sync.getRepo?did=${did}`, service);
-				const response = await fetch(repoUrl, { signal: signal });
 
-				if (!response.ok || !response.body) {
-					logger.error(`Failed to retrieve CAR file`);
-					return;
-				}
+			for await (const chunk of iterateStream(response.body)) {
+				size += chunk.length;
+				writable.write(chunk);
 
-				for await (const chunk of iterateStream(response.body)) {
-					size += chunk.length;
-					writable.write(chunk);
-
-					progress.update(`Downloading CAR file (${formatBytes(size)})`);
-				}
-			} finally {
-				progress.destroy();
+				progress.update(`Downloading CAR file (${formatBytes(size)})`);
 			}
 
 			logger.log(`CAR file downloaded (${formatBytes(size)})`);

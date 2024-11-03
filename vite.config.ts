@@ -4,8 +4,11 @@ import { defineConfig } from 'vite';
 import solid from 'vite-plugin-solid';
 
 export default defineConfig({
+	esbuild: {
+		target: 'es2023',
+	},
 	build: {
-		target: 'esnext',
+		target: 'es2023',
 		modulePreload: false,
 		sourcemap: true,
 		assetsInlineLimit: 0,
@@ -45,5 +48,13 @@ export default defineConfig({
 			'~': path.join(__dirname, './src'),
 		},
 	},
-	plugins: [solid()],
+	plugins: [
+		solid({
+			babel: {
+				parserOpts: {
+					plugins: ['explicitResourceManagement'],
+				},
+			},
+		}),
+	],
 });

@@ -51,37 +51,33 @@ const UnpackCarPage = () => {
 
 		for (const { collection, rkey, record } of iterateAtpRepo(ui8)) {
 			if (writable === undefined) {
-				const progress = logger.progress(`Waiting for the user`);
+				using _progress = logger.progress(`Waiting for the user`);
 
-				try {
-					const fd = await showSaveFilePicker({
-						suggestedName: `${file.name.replace(/\.car$/, '')}.tar`,
+				const fd = await showSaveFilePicker({
+					suggestedName: `${file.name.replace(/\.car$/, '')}.tar`,
 
-						// @ts-expect-error: ponyfill doesn't have the full typings
-						id: 'car-unpack',
-						startIn: 'downloads',
-						types: [
-							{
-								description: 'Tarball archive',
-								accept: { 'application/tar': ['.tar'] },
-							},
-						],
-					}).catch((err) => {
-						console.warn(err);
+					// @ts-expect-error: ponyfill doesn't have the full typings
+					id: 'car-unpack',
+					startIn: 'downloads',
+					types: [
+						{
+							description: 'Tarball archive',
+							accept: { 'application/tar': ['.tar'] },
+						},
+					],
+				}).catch((err) => {
+					console.warn(err);
 
-						if (err instanceof DOMException && err.name === 'AbortError') {
-							logger.warn(`Opened the file picker, but it was aborted`);
-						} else {
-							logger.warn(`Something went wrong when opening the file picker`);
-						}
+					if (err instanceof DOMException && err.name === 'AbortError') {
+						logger.warn(`Opened the file picker, but it was aborted`);
+					} else {
+						logger.warn(`Something went wrong when opening the file picker`);
+					}
 
-						return undefined;
-					});
+					return undefined;
+				});
 
-					writable = await fd?.createWritable();
-				} finally {
-					progress.destroy();
-				}
+				writable = await fd?.createWritable();
 
 				if (writable === undefined) {
 					// We already handled the errors above
