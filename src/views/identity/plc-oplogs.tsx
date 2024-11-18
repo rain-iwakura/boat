@@ -354,7 +354,7 @@ const CopyButton = (props: { text: string }) => {
 			title="Copy to clipboard"
 			onClick={copy}
 			class={
-				`grid h-6 w-6 place-items-center rounded text-base` +
+				`grid h-5 w-5 place-items-center rounded text-base` +
 				(!copied()
 					? ` text-gray-600 hover:bg-gray-200 hover:text-black active:bg-gray-200`
 					: ` bg-green-600 text-white`)
