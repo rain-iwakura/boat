@@ -1,4 +1,4 @@
-import { JSX, Match, Switch } from 'solid-js';
+import { createSignal, JSX, Match, onCleanup, Switch } from 'solid-js';
 import * as v from 'valibot';
 
 import { At } from '@atcute/client/lexicons';
@@ -15,6 +15,8 @@ import { asIdentifier, useSearchParams } from '~/lib/utils/search-params';
 import CircularProgressView from '~/components/circular-progress-view';
 import DiffTable from '~/components/diff-table';
 import ErrorView from '~/components/error-view';
+import ContentCopyIcon from '~/components/ic-icons/baseline-content-copy';
+import CheckIcon from '~/components/ic-icons/baseline-check';
 
 const PlcOperationLogPage = () => {
 	const [params, setParams] = useSearchParams({
@@ -301,10 +303,20 @@ const PlcOperationLogPage = () => {
 											</div>
 
 											<div class="flex min-w-0 grow flex-col py-4">
-												<p class="font-mono text-[0.8125rem] leading-5 text-gray-600">
-													<span class={!nullified ? `` : `line-through`}>{/* @once */ entry.createdAt}</span>
-													{nullified && <span> (nullified)</span>}
-												</p>
+												<div class="flex justify-between gap-4">
+													<div class="min-w-0 break-words font-mono text-[0.8125rem] leading-5 text-gray-600">
+														<p>
+															<span class={!nullified ? `` : `line-through`}>
+																{/* @once */ entry.createdAt}
+															</span>
+															{nullified && <span> (nullified)</span>}
+														</p>
+													</div>
+
+													<div>
+														<CopyButton text={JSON.stringify(entry, null, 2)} />
+													</div>
+												</div>
 
 												{node}
 											</div>
@@ -321,6 +333,37 @@ const PlcOperationLogPage = () => {
 };
 
 export default PlcOperationLogPage;
+
+const CopyButton = (props: { text: string }) => {
+	const [copied, setCopied] = createSignal(false);
+	let timeout: number | undefined;
+
+	onCleanup(() => clearTimeout(timeout));
+
+	const copy = () => {
+		navigator.clipboard.writeText(props.text).then(() => {
+			clearTimeout(timeout);
+
+			setCopied(true);
+			timeout = setTimeout(() => setCopied(false), 500);
+		});
+	};
+
+	return (
+		<button
+			title="Copy to clipboard"
+			onClick={copy}
+			class={
+				`grid h-6 w-6 place-items-center rounded text-base` +
+				(!copied()
+					? ` text-gray-600 hover:bg-gray-200 hover:text-black active:bg-gray-200`
+					: ` bg-green-600 text-white`)
+			}
+		>
+			{!copied() ? <ContentCopyIcon /> : <CheckIcon />}
+		</button>
+	);
+};
 
 const groupBy = <K, T>(items: T[], keyFn: (item: T, index: number) => K): Map<K, T[]> => {
 	const map = new Map<K, T[]>();
