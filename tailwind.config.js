@@ -1,5 +1,7 @@
 import plugin from 'tailwindcss/plugin';
 
+import forms from '@tailwindcss/forms';
+
 /** @type {import('tailwindcss').Config} */
 export default {
 	content: ['./src/**/*.tsx'],
@@ -16,6 +18,7 @@ export default {
 		hoverOnlyWhenSupported: true,
 	},
 	plugins: [
+		forms(),
 		plugin(({ addVariant, addUtilities }) => {
 			addVariant('modal', '&:modal');
 			addVariant('focus-within', '&:has(:focus-visible)');

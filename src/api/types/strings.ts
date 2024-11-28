@@ -19,3 +19,8 @@ export const serviceUrlString = v.pipe(
 		);
 	}, 'must be a valid service url'),
 );
+
+export const didKeyString = v.pipe(
+	v.string(),
+	v.check((str) => str.startsWith('did:key:')),
+);

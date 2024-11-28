@@ -1,12 +1,12 @@
 import { createSignal, JSX, Match, onCleanup, Switch } from 'solid-js';
-import * as v from 'valibot';
 
 import { At } from '@atcute/client/lexicons';
 
 import { resolveHandleViaAppView } from '~/api/queries/handle';
-import { didString, handleString, serviceUrlString } from '~/api/types/strings';
+import { PlcLogEntry, Service } from '~/api/types/plc';
 import { DID_OR_HANDLE_RE, isDid } from '~/api/utils/strings';
 
+import { getPlcAuditLogs } from '~/api/queries/plc';
 import { useTitle } from '~/lib/navigation/router';
 import { dequal } from '~/lib/utils/dequal';
 import { createQuery } from '~/lib/utils/query';
@@ -15,8 +15,9 @@ import { asIdentifier, useSearchParams } from '~/lib/utils/search-params';
 import CircularProgressView from '~/components/circular-progress-view';
 import DiffTable from '~/components/diff-table';
 import ErrorView from '~/components/error-view';
-import ContentCopyIcon from '~/components/ic-icons/baseline-content-copy';
+
 import CheckIcon from '~/components/ic-icons/baseline-check';
+import ContentCopyIcon from '~/components/ic-icons/baseline-content-copy';
 
 const PlcOperationLogPage = () => {
 	const [params, setParams] = useSearchParams({
@@ -37,13 +38,8 @@ const PlcOperationLogPage = () => {
 				throw new Error(`${did} is not plc`);
 			}
 
-			const response = await fetch(`https://plc.directory/${did}/log/audit`);
-			if (!response.ok) {
-				throw new Error(`got resposne ${response.status}`);
-			}
-
-			const json = await response.json();
-			return v.parse(plcLogEntries, json);
+			const logs = await getPlcAuditLogs({ did, signal });
+			return logs;
 		},
 	);
 
@@ -84,7 +80,7 @@ const PlcOperationLogPage = () => {
 						pattern={DID_OR_HANDLE_RE.source}
 						placeholder="paul.bsky.social"
 						value={params.q ?? ''}
-						class="rounded border border-gray-400 px-3 py-2 text-sm outline-2 -outline-offset-1 outline-purple-600 placeholder:text-gray-400 focus:outline"
+						class="rounded border border-gray-400 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-purple-800 focus:ring-1 focus:ring-purple-800 focus:ring-offset-0"
 					/>
 				</label>
 
@@ -711,68 +707,6 @@ const createOperationHistory = (entries: PlcLogEntry[]): DiffEntry[] => {
 
 	return history;
 };
-
-const didKeyString = v.pipe(
-	v.string(),
-	v.check((str) => str.startsWith('did:key:')),
-);
-
-const legacyGenesisOp = v.object({
-	type: v.literal('create'),
-	signingKey: didKeyString,
-	recoveryKey: didKeyString,
-	handle: handleString,
-	service: serviceUrlString,
-	prev: v.null(),
-	sig: v.string(),
-});
-
-const tombstoneOp = v.object({
-	type: v.literal('plc_tombstone'),
-	prev: v.string(),
-	sig: v.string(),
-});
-
-const service = v.object({
-	type: v.string(),
-	endpoint: v.pipe(v.string(), v.url()),
-});
-type Service = v.InferOutput<typeof service>;
-
-const plcOp = v.object({
-	type: v.literal('plc_operation'),
-	rotationKeys: v.array(didKeyString),
-	verificationMethods: v.record(v.string(), didKeyString),
-	alsoKnownAs: v.array(v.pipe(v.string(), v.url())),
-	services: v.record(
-		v.string(),
-		v.object({
-			type: v.string(),
-			endpoint: v.pipe(v.string(), v.url()),
-		}),
-	),
-	prev: v.nullable(v.string()),
-	sig: v.string(),
-});
-
-const plcOperation = v.union([legacyGenesisOp, tombstoneOp, plcOp]);
-
-const plcLogEntry = v.object({
-	did: didString,
-	cid: v.string(),
-	operation: plcOperation,
-	nullified: v.boolean(),
-	createdAt: v.pipe(
-		v.string(),
-		v.check((dateString) => {
-			const date = new Date(dateString);
-			return !Number.isNaN(date.getTime());
-		}),
-	),
-});
-type PlcLogEntry = v.InferOutput<typeof plcLogEntry>;
-
-const plcLogEntries = v.array(plcLogEntry);
 
 function findLastMatching<T, S extends T>(
 	arr: T[],

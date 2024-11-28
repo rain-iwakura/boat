@@ -260,7 +260,7 @@ const BlobExportPage = () => {
 							required
 							pattern={DID_OR_HANDLE_RE.source}
 							placeholder="paul.bsky.social"
-							class="rounded border border-gray-400 px-3 py-2 text-sm outline-2 -outline-offset-1 outline-purple-600 placeholder:text-gray-400 focus:outline"
+							class="rounded border border-gray-400 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-purple-800 focus:ring-1 focus:ring-purple-800 focus:ring-offset-0"
 						/>
 					</label>
 
@@ -280,7 +280,7 @@ const BlobExportPage = () => {
 									input.setCustomValidity('');
 								}
 							}}
-							class="rounded border border-gray-400 px-3 py-2 text-sm outline-2 -outline-offset-1 outline-purple-600 placeholder:text-gray-400 focus:outline"
+							class="rounded border border-gray-400 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-purple-800 focus:ring-1 focus:ring-purple-800 focus:ring-offset-0"
 						/>
 					</label>
 
