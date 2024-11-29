@@ -28,7 +28,7 @@ export type Service = v.InferOutput<typeof service>;
 
 const updateOp = v.object({
 	type: v.literal('plc_operation'),
-	rotationKeys: v.array(didKeyString),
+	rotationKeys: v.pipe(v.array(didKeyString), v.minLength(1)),
 	verificationMethods: v.record(v.string(), didKeyString),
 	alsoKnownAs: v.array(v.pipe(v.string(), v.url())),
 	services: v.record(
