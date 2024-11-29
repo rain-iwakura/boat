@@ -21,6 +21,10 @@ const routes: RouteDefinition[] = [
 		path: '/plc-oplogs',
 		component: lazy(() => import('./views/identity/plc-oplogs')),
 	},
+	{
+		path: '/plc-applicator',
+		component: lazy(() => import('./views/identity/plc-applicator')),
+	},
 
 	{
 		path: '/repo-export',
