@@ -1,5 +1,5 @@
 import { simpleFetchHandler, XRPC } from '@atcute/client';
 
-export const APPVIEW_URL = 'https://public.api.bsky.app';
-
+const APPVIEW_URL = import.meta.env.VITE_APPVIEW_URL;
+console.log(import.meta.env);
 export const appViewRpc = new XRPC({ handler: simpleFetchHandler({ service: APPVIEW_URL }) });

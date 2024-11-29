@@ -20,7 +20,8 @@ export const getDidDocument = async ({
 	let rawDoc: any;
 
 	if (type === 'plc') {
-		const response = await fetch(`https://plc.directory/${did}`, { signal });
+		const origin = import.meta.env.VITE_PLC_DIRECTORY_URL;
+		const response = await fetch(`${origin}/${did}`, { signal });
 
 		if (response.status === 404) {
 			throw new Error(`did not found in directory`);
