@@ -17,6 +17,7 @@ import { DidDocument, getPdsEndpoint } from '~/api/types/did-doc';
 import { PlcLogEntry, PlcUpdateOp, PlcUpdatePayload, updatePayload } from '~/api/types/plc';
 import { DID_OR_HANDLE_RE, isDid } from '~/api/utils/strings';
 
+import { useTitle } from '~/lib/navigation/router';
 import { assert } from '~/lib/utils/invariant';
 
 const EMAIL_OTP_RE = /^([a-zA-Z0-9]{5})[\- ]?([a-zA-Z0-9]{5})$/;
@@ -47,6 +48,8 @@ const PlcUpdatePage = () => {
 		prev?: PlcLogEntry;
 		payload?: PlcUpdatePayload;
 	}>({});
+
+	useTitle(() => `Apply PLC operations — boat`);
 
 	return (
 		<fieldset disabled={pending()} class="contents">
