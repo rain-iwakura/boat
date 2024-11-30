@@ -3,6 +3,7 @@ import { Component, ComponentProps } from 'solid-js';
 import { useTitle } from '~/lib/navigation/router';
 
 import HistoryIcon from '~/components/ic-icons/baseline-history';
+import AdminPanelSettingsOutlinedIcon from '~/components/ic-icons/outline-admin-panel-settings';
 import ArchiveOutlinedIcon from '~/components/ic-icons/outline-archive';
 import BookmarksOutlinedIcon from '~/components/ic-icons/outline-bookmarks';
 import DirectionsCarOutlinedIcon from '~/components/ic-icons/outline-directions-car';
@@ -43,7 +44,7 @@ const Frontpage = () => {
 					name: `Apply PLC operations`,
 					description: `Submit operations to your did:plc identity`,
 					href: `/plc-applicator`,
-					icon: VisibilityOutlinedIcon,
+					icon: AdminPanelSettingsOutlinedIcon,
 				},
 			],
 		},
