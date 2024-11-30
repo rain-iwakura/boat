@@ -39,6 +39,12 @@ const Frontpage = () => {
 					href: '/plc-oplogs',
 					icon: HistoryIcon,
 				},
+				{
+					name: `Apply PLC operations`,
+					description: `Submit operations to your did:plc identity`,
+					href: `/plc-applicator`,
+					icon: VisibilityOutlinedIcon,
+				},
 			],
 		},
 		{

@@ -1,25 +1,25 @@
 import { createEffect, createSignal, JSX, Match, Show, Switch } from 'solid-js';
-import { createMutable } from 'solid-js/store';
+import { createMutable, unwrap } from 'solid-js/store';
 
+import * as CBOR from '@atcute/cbor';
 import { AtpSessionData, CredentialManager, XRPC, XRPCError } from '@atcute/client';
 import { At, ComAtprotoIdentityGetRecommendedDidCredentials } from '@atcute/client/lexicons';
-import * as CBOR from '@atcute/cbor';
 
-import { Keypair, verifySignature } from '@atproto/crypto';
+import { P256Keypair, Secp256k1Keypair, verifySignature } from '@atproto/crypto';
 import * as uint8arrays from 'uint8arrays';
+
+import * as v from 'valibot';
 
 import { getDidDocument } from '~/api/queries/did-doc';
 import { resolveHandleViaAppView } from '~/api/queries/handle';
 import { getPlcAuditLogs } from '~/api/queries/plc';
 import { DidDocument, getPdsEndpoint } from '~/api/types/did-doc';
-import { PlcLogEntry } from '~/api/types/plc';
+import { PlcLogEntry, PlcUpdateOp, PlcUpdatePayload, updatePayload } from '~/api/types/plc';
 import { DID_OR_HANDLE_RE, isDid } from '~/api/utils/strings';
 
 import { assert } from '~/lib/utils/invariant';
 
-import { PdsData } from './foo.local';
-
-const EMAIL_OTP_RE = /^([a-zA-Z0-9]{5})[- ]?([a-zA-Z0-9]{5})$/;
+const EMAIL_OTP_RE = /^([a-zA-Z0-9]{5})[\- ]?([a-zA-Z0-9]{5})$/;
 
 const PlcUpdatePage = () => {
 	const [step, setStep] = createSignal(1);
@@ -33,21 +33,25 @@ const PlcUpdatePage = () => {
 
 		rotationKeyType?: 'owned' | 'pds';
 		ownedRotationKey?: {
-			privateKey: Keypair;
+			keypair: P256Keypair | Secp256k1Keypair;
 			didPublicKey: string;
 		};
 		pdsData?: {
 			service: string;
 			session: AtpSessionData;
+			rpc: XRPC;
 			recommendedDidDoc: ComAtprotoIdentityGetRecommendedDidCredentials.Output;
 		};
 		accountHasOtp?: boolean;
+
+		prev?: PlcLogEntry;
+		payload?: PlcUpdatePayload;
 	}>({});
 
 	return (
 		<fieldset disabled={pending()} class="contents">
 			<div class="p-4">
-				<h1 class="text-lg font-bold text-purple-800">PLC operation applicator</h1>
+				<h1 class="text-lg font-bold text-purple-800">Apply PLC operations</h1>
 				<p class="text-gray-600">Submit operations to your did:plc identity</p>
 			</div>
 			<hr class="mx-4 border-gray-300" />
@@ -176,12 +180,6 @@ const PlcUpdatePage = () => {
 								return;
 							}
 
-							// if (PdsData) {
-							// 	states.pdsData = PdsData as any;
-							// 	setStep(3);
-							// 	return;
-							// }
-
 							assert(states.didDoc);
 
 							try {
@@ -209,9 +207,9 @@ const PlcUpdatePage = () => {
 									service,
 									session,
 									recommendedDidDoc,
+									rpc,
 								};
 
-								console.log(data);
 								states.pdsData = data;
 								states.accountHasOtp = false;
 
@@ -225,14 +223,22 @@ const PlcUpdatePage = () => {
 										return;
 									}
 
-									if (err.message.includes('Token is invalid')) {
+									if (err.kind === 'AuthenticationRequired') {
+										msg = `Invalid identifier or password`;
+									} else if (err.kind === 'AccountTakedown') {
+										msg = `Account has been taken down`;
+									} else if (err.message.includes('Token is invalid')) {
 										msg = `Invalid one-time confirmation code`;
 										states.accountHasOtp = true;
 									}
 								}
 
-								console.error(err);
-								setError({ step: 2, message: msg ?? `Something went wrong: ${err}` });
+								if (msg !== undefined) {
+									setError({ step: 2, message: msg });
+								} else {
+									console.error(err);
+									setError({ step: 2, message: `Something went wrong: ${err}` });
+								}
 							} finally {
 								setPending(false);
 							}
@@ -245,6 +251,7 @@ const PlcUpdatePage = () => {
 									<button
 										type="button"
 										onClick={() => (states.pdsData = undefined)}
+										hidden={step() !== 2}
 										class="text-purple-800 hover:underline disabled:pointer-events-none"
 									>
 										Sign out?
@@ -260,7 +267,7 @@ const PlcUpdatePage = () => {
 									type="url"
 									name="service"
 									required
-									value={states.didDoc ? getPdsEndpoint(states.didDoc) : ''}
+									value={(states.didDoc && getPdsEndpoint(states.didDoc)) || ''}
 									placeholder="https://bsky.social"
 									class="rounded border border-gray-400 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-purple-800 focus:ring-1 focus:ring-purple-800 focus:ring-offset-0"
 								/>
@@ -285,7 +292,7 @@ const PlcUpdatePage = () => {
 
 							<Show when={states.accountHasOtp}>
 								<label class="mt-6 flex flex-col gap-2">
-									<span class="font-semibold text-gray-600">Email one-time confirmation code</span>
+									<span class="font-semibold text-gray-600">One-time confirmation code</span>
 									<input
 										type="text"
 										name="otp"
@@ -299,8 +306,8 @@ const PlcUpdatePage = () => {
 							</Show>
 
 							<p class="mt-2 text-[0.8125rem] leading-5 text-gray-500">
-								The app runs locally on your browser, your credentials stays within your device. The app is
-								open source and can be audited as necessary.
+								This app runs locally on your browser, your credentials stays entirely within your device. It
+								is open source and can be audited as necessary.
 							</p>
 						</Show>
 
@@ -332,8 +339,39 @@ const PlcUpdatePage = () => {
 						step={2}
 						title="Enter your private key"
 						current={step()}
-						onSubmit={() => {
-							//
+						onSubmit={async (form) => {
+							try {
+								setPending(true);
+								setError();
+
+								const key = form.get('key') as string;
+								const type = form.get('type') as 'secp256k1' | 'nistp256';
+
+								let keypair: P256Keypair | Secp256k1Keypair;
+
+								if (type === 'nistp256') {
+									keypair = await P256Keypair.import(key);
+								} else if (type === 'secp256k1') {
+									keypair = await Secp256k1Keypair.import(key);
+								} else {
+									throw new Error(`unsupported '${type}' type`);
+								}
+
+								states.ownedRotationKey = { didPublicKey: keypair.did(), keypair: keypair };
+
+								setStep(3);
+							} catch (err) {
+								let msg: string | undefined;
+
+								if (msg !== undefined) {
+									setError({ step: 2, message: msg });
+								} else {
+									console.error(err);
+									setError({ step: 2, message: `Something went wrong: ${err}` });
+								}
+							} finally {
+								setPending(false);
+							}
 						}}
 					>
 						<label class="flex flex-col gap-2">
@@ -346,18 +384,48 @@ const PlcUpdatePage = () => {
 										}
 									});
 								}}
-								type="text"
+								type={step() === 2 ? 'text' : 'password'}
 								name="key"
 								required
+								autocomplete="off"
+								autocorrect="off"
 								placeholder="a5973930f9d348..."
 								pattern="[0-9a-f]+"
-								class="rounded border border-gray-400 px-3 py-2 font-mono text-sm tracking-wide placeholder:text-gray-400 focus:border-purple-800 focus:ring-1 focus:ring-purple-800 focus:ring-offset-0"
+								class="rounded border border-gray-400 px-3 py-2 font-mono text-sm placeholder:text-gray-400 focus:border-purple-800 focus:ring-1 focus:ring-purple-800 focus:ring-offset-0"
 							/>
 						</label>
-						<p class="mt-2 text-[0.8125rem] leading-5 text-gray-500">
-							The app runs locally on your browser, your private key stays within your device. The app is open
-							source and can be audited as necessary.
+						<p hidden={step() !== 2} class="mt-2 text-[0.8125rem] leading-5 text-gray-500">
+							This app runs locally on your browser, your private key stays entirely within your device. It is
+							open source and can be audited as necessary.
 						</p>
+
+						<fieldset class="mt-6 flex flex-col gap-2">
+							<span class="font-semibold text-gray-600">This is a...</span>
+
+							<label class="flex items-start gap-3">
+								<input
+									type="radio"
+									name="type"
+									required
+									value="secp256k1"
+									class="border-gray-400 text-purple-800 focus:ring-purple-800"
+								/>
+								<span class="text-sm">ES256K (secp256k1) private key</span>
+							</label>
+
+							<label class="flex items-start gap-3">
+								<input
+									type="radio"
+									name="type"
+									required
+									value="nistp256"
+									class="border-gray-400 text-purple-800 focus:ring-purple-800"
+								/>
+								<span class="text-sm">ES256 (nistp256) private key</span>
+							</label>
+						</fieldset>
+
+						<ErrorMessageView step={2} error={error()} />
 
 						<div hidden={step() !== 2} class="mt-6 flex flex-wrap gap-4">
 							<div class="grow"></div>
@@ -385,17 +453,44 @@ const PlcUpdatePage = () => {
 				step={3}
 				title="Select which operation to use as foundation"
 				current={step()}
-				onSubmit={() => {
-					//
+				onSubmit={(form) => {
+					setError();
+
+					const cid = form.get('cid') as string;
+					const entry = states.logs?.find((entry) => entry.cid === cid);
+
+					if (!entry) {
+						setError({ step: 3, message: `Can't find CID ${cid}` });
+						return;
+					}
+
+					const op = entry.operation;
+					if (op.type !== 'plc_operation' && op.type !== 'create') {
+						setError({ step: 3, message: `Expected op to be 'plc_operation' or 'create'` });
+						return;
+					}
+
+					states.prev = entry;
+					states.payload = getPlcPayload(entry);
+
+					setStep(4);
 				}}
 			>
-				<label class="mt-6 flex flex-col gap-2">
+				<label class="flex flex-col gap-2">
 					<span class="font-semibold text-gray-600">Base operation</span>
 
 					<select
+						ref={(node) => {
+							createEffect(() => {
+								if (step() === 3) {
+									setTimeout(() => node.focus(), 1);
+								}
+							});
+						}}
+						name="cid"
 						value=""
 						required
-						class="rounded border border-gray-400 px-3 py-2 text-sm focus:border-purple-800 focus:ring-1 focus:ring-purple-800 focus:ring-offset-0"
+						class="rounded border border-gray-400 py-2 pl-3 pr-8 text-sm focus:border-purple-800 focus:ring-1 focus:ring-purple-800 focus:ring-offset-0"
 					>
 						<option value="">Select an operation...</option>
 						{(() => {
@@ -408,9 +503,13 @@ const PlcUpdatePage = () => {
 
 							let ownKey: string | undefined;
 							if (rotationKeyType === 'pds') {
-								ownKey = states.pdsData?.recommendedDidDoc.rotationKeys?.[0];
+								ownKey = states.pdsData?.recommendedDidDoc.rotationKeys?.at(-1);
 							} else if (rotationKeyType === 'owned') {
 								ownKey = states.ownedRotationKey?.didPublicKey;
+							}
+
+							if (ownKey === undefined) {
+								return [];
 							}
 
 							const length = logs.length;
@@ -420,20 +519,25 @@ const PlcUpdatePage = () => {
 
 								let enabled = signers.includes(ownKey!);
 
-								// If we're showing older operations for nullification,
-								// check if our key has priority against the signer
+								// If we're showing older operations for forking/nullification,
+								// check to see that our key has priority over the signer.
 								if (enabled && !last) {
-									const holderKey = logs[idx + 1].signedBy;
+									if (rotationKeyType === 'pds') {
+										// `signPlcOperation` will always grab the last op
+										enabled = false;
+									} else {
+										const holderKey = logs[idx + 1].signedBy;
 
-									const holderIndex = signers.indexOf(holderKey);
-									const ownIndex = signers.indexOf(ownKey!);
+										const holderPriority = signers.indexOf(holderKey);
+										const ownPriority = signers.indexOf(ownKey);
 
-									enabled = ownIndex > holderIndex;
+										enabled = ownPriority < holderPriority;
+									}
 								}
 
 								return (
 									<option disabled={!enabled} value={/* @once */ entry.cid}>
-										{/* @once */ entry.createdAt}
+										{/* @once */ `${entry.createdAt} (by ${entry.signedBy})`}
 									</option>
 								);
 							});
@@ -444,9 +548,11 @@ const PlcUpdatePage = () => {
 				</label>
 
 				<p class="mt-2 text-[0.8125rem] leading-5 text-gray-500">
-					Some operations can't be used as a base if the rotation key is insufficient for nullification, or if
-					it is not listed.
+					Some operations can't be used as a base if the rotation key does not have the privilege for
+					nullification, or if it is not listed.
 				</p>
+
+				<ErrorMessageView step={3} error={error()} />
 
 				<div hidden={step() !== 3} class="mt-6 flex flex-wrap gap-4">
 					<div class="grow"></div>
@@ -472,28 +578,421 @@ const PlcUpdatePage = () => {
 				step={4}
 				title="Enter your payload"
 				current={step()}
-				onSubmit={() => {
-					//
+				onSubmit={(form) => {
+					setError();
+
+					const payload = form.get('payload') as string;
+
+					let json: unknown;
+					try {
+						json = JSON.parse(payload);
+					} catch {
+						setError({ step: 4, message: `Unable to parse JSON` });
+						return;
+					}
+
+					const result = v.safeParse(updatePayload, json);
+					if (!result.success) {
+						const issue = result.issues[0];
+						const path = v.getDotPath(issue);
+
+						setError({ step: 4, message: `Error at '.${path}'\n${issue.message}` });
+						return;
+					}
+
+					states.payload = json as any;
+
+					setStep(5);
 				}}
 			>
-				<div></div>
+				<label class="flex flex-col gap-2">
+					<span class="font-semibold text-gray-600">Payload input</span>
+
+					<textarea
+						ref={(node) => {
+							createEffect(() => {
+								if (step() === 4) {
+									setTimeout(() => node.focus(), 1);
+								}
+							});
+						}}
+						name="payload"
+						required
+						rows={22}
+						value={JSON.stringify(states.payload, null, 2)}
+						class="resize-y break-all rounded border border-gray-400 px-3 py-2 font-mono text-xs tracking-wider placeholder:text-gray-400 focus:border-purple-800 focus:ring-1 focus:ring-purple-800 focus:ring-offset-0"
+						style="field-sizing: content"
+					/>
+				</label>
+
+				<div hidden={step() !== 4} class="mt-2 flex flex-wrap gap-4">
+					{states.pdsData && (
+						<button
+							type="button"
+							onClick={() => {
+								const entry = unwrap(states.prev);
+								assert(entry !== undefined);
+
+								const recommended = unwrap(states.pdsData!.recommendedDidDoc);
+								const payload = getPlcPayload(entry);
+
+								if (recommended.alsoKnownAs) {
+									payload.alsoKnownAs = recommended.alsoKnownAs;
+								}
+								if (recommended.rotationKeys) {
+									payload.rotationKeys = recommended.rotationKeys;
+								}
+								if (recommended.services) {
+									// @ts-expect-error
+									payload.services = recommended.services;
+								}
+								if (recommended.verificationMethods) {
+									// @ts-expect-error
+									payload.verificationMethods = recommended.verificationMethods;
+								}
+
+								states.payload = payload;
+							}}
+							class="text-[0.8125rem] leading-5 text-purple-800 hover:underline disabled:pointer-events-none"
+						>
+							Use PDS recommendation
+						</button>
+					)}
+
+					<button
+						type="button"
+						onClick={() => {
+							const entry = unwrap(states.prev);
+							assert(entry !== undefined);
+
+							const payload = getPlcPayload(entry);
+
+							states.payload = payload;
+						}}
+						class="text-[0.8125rem] leading-5 text-purple-800 hover:underline disabled:pointer-events-none"
+					>
+						Reset to default
+					</button>
+				</div>
+
+				<ErrorMessageView step={4} error={error()} />
+
+				<div hidden={step() !== 4} class="mt-6 flex flex-wrap gap-4">
+					<div class="grow"></div>
+
+					<button
+						type="button"
+						onClick={() => setStep(3)}
+						class="flex h-9 select-none items-center rounded bg-gray-200 px-4 text-sm font-semibold text-black hover:bg-gray-300 active:bg-gray-300"
+					>
+						Previous
+					</button>
+
+					<button
+						type="submit"
+						class="flex h-9 select-none items-center rounded bg-purple-800 px-4 text-sm font-semibold text-white hover:bg-purple-700 active:bg-purple-700"
+					>
+						Next
+					</button>
+				</div>
 			</StepPage>
 
-			<StepPage
-				step={5}
-				title="Review"
-				current={step()}
-				onSubmit={() => {
-					//
-				}}
-			>
-				<div></div>
+			<Switch>
+				<Match when={states.rotationKeyType === 'pds'}>
+					<StepPage
+						step={5}
+						title="One more step"
+						current={step()}
+						onSubmit={async (form) => {
+							try {
+								setPending(true);
+								setError();
+
+								const code = form.get('code') as string;
+
+								const rpc = states.pdsData!.rpc;
+								const payload = states.payload!;
+
+								const { data: signage } = await rpc.call('com.atproto.identity.signPlcOperation', {
+									data: {
+										token: code,
+										alsoKnownAs: payload.alsoKnownAs,
+										rotationKeys: payload.rotationKeys,
+										services: payload.services,
+										verificationMethods: payload.verificationMethods,
+									},
+								});
+
+								await rpc.call('com.atproto.identity.submitPlcOperation', {
+									data: {
+										operation: signage.operation,
+									},
+								});
+
+								setStep(6);
+							} catch (err) {
+								let msg: string | undefined;
+
+								if (err instanceof XRPCError) {
+									if (err.kind === 'InvalidToken' || err.kind === 'ExpiredToken') {
+										msg = `Confirmation code has expired`;
+									}
+								}
+
+								if (msg !== undefined) {
+									setError({ step: 5, message: msg });
+								} else {
+									console.error(err);
+									setError({ step: 5, message: `Something went wrong: ${err}` });
+								}
+							} finally {
+								setPending(false);
+							}
+						}}
+					>
+						<p>
+							To continue with this submission, you will need to request a confirmation code from your PDS.
+							This code will be sent to your account's email address.
+						</p>
+
+						<label class="mt-6 flex flex-col gap-2">
+							<span class="font-semibold text-gray-600">One-time confirmation code</span>
+							<input
+								ref={(node) => {
+									createEffect(() => {
+										if (step() === 5) {
+											setTimeout(() => node.focus(), 1);
+										}
+									});
+								}}
+								type="text"
+								name="code"
+								required
+								autocomplete="one-time-code"
+								pattern={/* @once */ EMAIL_OTP_RE.source}
+								placeholder="AAAAA-BBBBB"
+								class="rounded border border-gray-400 px-3 py-2 font-mono text-sm tracking-wide placeholder:text-gray-400 focus:border-purple-800 focus:ring-1 focus:ring-purple-800 focus:ring-offset-0"
+							/>
+						</label>
+
+						<div hidden={step() !== 5} class="mt-2 flex flex-wrap gap-4">
+							<button
+								type="button"
+								onClick={async () => {
+									try {
+										const rpc = states.pdsData!.rpc;
+
+										await rpc.call('com.atproto.identity.requestPlcOperationSignature', {});
+										alert(`Confirmation code has been sent, check your email inbox.`);
+									} catch (err) {
+										let msg: string | undefined;
+
+										if (err instanceof XRPCError) {
+											if (err.message.includes(`does not have an email address`)) {
+												msg = `Account does not have an email address`;
+											} else if (err.message.includes(`not found`)) {
+												msg = `Account is not registered on the PDS`;
+											}
+										}
+
+										if (msg !== undefined) {
+											setError({ step: 5, message: msg });
+										} else {
+											console.error(err);
+											setError({ step: 5, message: `Something went wrong: ${err}` });
+										}
+									}
+								}}
+								class="text-[0.8125rem] leading-5 text-purple-800 hover:underline disabled:pointer-events-none"
+							>
+								Request confirmation code
+							</button>
+						</div>
+
+						<p class="mt-6">
+							Now, relax. Take a breather. Verify that you have provided the intended payload, and hit{' '}
+							<i>Submit</i> when you're ready.
+						</p>
+
+						<p class="mt-3 text-[0.8125rem] font-medium leading-5 text-red-800">
+							Caution: This action carries significant risk which can possibly render your did:plc identity
+							unusable. Proceed at your own risk, we assume no liability for any consequences.
+						</p>
+
+						<label class="mt-6 flex items-start gap-3">
+							<input
+								type="checkbox"
+								name="confirm"
+								required
+								class="rounded border-gray-400 text-purple-800 focus:ring-purple-800"
+							/>
+							<span class="text-sm">I have verified and am ready to proceed</span>
+						</label>
+
+						<ErrorMessageView step={5} error={error()} />
+
+						<div hidden={step() !== 5} class="mt-6 flex flex-wrap gap-4">
+							<div class="grow"></div>
+
+							<button
+								type="button"
+								onClick={() => setStep(4)}
+								class="flex h-9 select-none items-center rounded bg-gray-200 px-4 text-sm font-semibold text-black hover:bg-gray-300 active:bg-gray-300"
+							>
+								Previous
+							</button>
+
+							<button
+								type="submit"
+								class="flex h-9 select-none items-center rounded bg-purple-800 px-4 text-sm font-semibold text-white hover:bg-purple-700 active:bg-purple-700"
+							>
+								Submit
+							</button>
+						</div>
+					</StepPage>
+				</Match>
+
+				<Match when={states.rotationKeyType === 'owned'}>
+					<StepPage
+						step={5}
+						title="One more step"
+						current={step()}
+						onSubmit={async () => {
+							try {
+								setPending(true);
+								setError();
+
+								const keypair = states.ownedRotationKey!.keypair;
+								const payload = states.payload!;
+								const prev = states.prev!;
+
+								const operation: Omit<PlcUpdateOp, 'sig'> = {
+									type: 'plc_operation',
+									prev: prev!.cid,
+
+									alsoKnownAs: payload.alsoKnownAs,
+									rotationKeys: payload.rotationKeys,
+									services: payload.services,
+									verificationMethods: payload.verificationMethods,
+								};
+
+								const opBytes = CBOR.encode(operation);
+								const sigBytes = await keypair.sign(opBytes);
+
+								const signature = uint8arrays.toString(sigBytes, 'base64url');
+
+								const signedOperation: PlcUpdateOp = {
+									...operation,
+									sig: signature,
+								};
+
+								await pushPlcOperation(states.didDoc!.id, signedOperation);
+
+								setStep(6);
+							} catch (err) {
+								let msg: string | undefined;
+
+								if (msg !== undefined) {
+									setError({ step: 5, message: msg });
+								} else {
+									console.error(err);
+									setError({ step: 5, message: `Something went wrong: ${err}` });
+								}
+							} finally {
+								setPending(false);
+							}
+						}}
+					>
+						<p>
+							Now, relax. Take a breather. Verify that you have provided the intended payload, and hit{' '}
+							<i>Submit</i> when you're ready.
+						</p>
+
+						<p class="mt-3 text-[0.8125rem] font-medium leading-5 text-red-800">
+							Caution: This action carries significant risk which can possibly render your did:plc identity
+							unusable. Proceed at your own risk, we assume no liability for any consequences.
+						</p>
+
+						<label class="mt-6 flex items-start gap-3">
+							<input
+								ref={(node) => {
+									createEffect(() => {
+										if (step() === 5) {
+											setTimeout(() => node.focus(), 1);
+										}
+									});
+								}}
+								type="checkbox"
+								name="confirm"
+								required
+								class="rounded border-gray-400 text-purple-800 focus:ring-purple-800"
+							/>
+							<span class="text-sm">I have verified and am ready to proceed</span>
+						</label>
+
+						<ErrorMessageView step={5} error={error()} />
+
+						<div hidden={step() !== 5} class="mt-6 flex flex-wrap gap-4">
+							<div class="grow"></div>
+
+							<button
+								type="button"
+								onClick={() => setStep(4)}
+								class="flex h-9 select-none items-center rounded bg-gray-200 px-4 text-sm font-semibold text-black hover:bg-gray-300 active:bg-gray-300"
+							>
+								Previous
+							</button>
+
+							<button
+								type="submit"
+								class="flex h-9 select-none items-center rounded bg-purple-800 px-4 text-sm font-semibold text-white hover:bg-purple-700 active:bg-purple-700"
+							>
+								Submit
+							</button>
+						</div>
+					</StepPage>
+				</Match>
+			</Switch>
+
+			<StepPage step={6} title="All done!" current={step()} onSubmit={() => {}}>
+				<p>Your did:plc identity has been updated.</p>
+
+				<p class="mt-3">
+					You can close this page, or reload the page if you intend on doing another submission.
+				</p>
 			</StepPage>
+
+			<div class="pb-24"></div>
 		</fieldset>
 	);
 };
 
 export default PlcUpdatePage;
+
+const pushPlcOperation = async (did: string, operation: PlcUpdateOp) => {
+	const origin = import.meta.env.VITE_PLC_DIRECTORY_URL;
+	const response = await fetch(`${origin}/${did}`, {
+		method: 'post',
+		headers: {
+			'content-type': 'application/json',
+		},
+		body: JSON.stringify(operation),
+	});
+
+	const headers = response.headers;
+	if (!response.ok) {
+		const type = headers.get('content-type');
+
+		if (type?.includes('application/json')) {
+			const json = await response.json();
+			if (typeof json === 'object' && json !== null && typeof json.message === 'string') {
+				throw new Error(json.message);
+			}
+		}
+
+		throw new Error(`got http ${response.status} from plc`);
+	}
+};
 
 const formatEmailOtpCode = (code: string) => {
 	code = code.toUpperCase();
@@ -504,6 +1003,36 @@ const formatEmailOtpCode = (code: string) => {
 	}
 
 	return '';
+};
+
+const getPlcPayload = (entry: PlcLogEntry): PlcUpdatePayload => {
+	const op = entry.operation;
+	assert(op.type === 'plc_operation' || op.type === 'create');
+
+	if (op.type === 'create') {
+		return {
+			alsoKnownAs: [`at://${op.handle}`],
+			rotationKeys: [op.recoveryKey, op.signingKey],
+			verificationMethods: {
+				atproto: op.signingKey,
+			},
+			services: {
+				atproto_pds: {
+					type: 'AtprotoPersonalDataServer',
+					endpoint: op.service,
+				},
+			},
+		};
+	} else if (op.type === 'plc_operation') {
+		return {
+			alsoKnownAs: op.alsoKnownAs,
+			rotationKeys: op.rotationKeys,
+			services: op.services,
+			verificationMethods: op.verificationMethods,
+		};
+	}
+
+	assert(false);
 };
 
 const getPlcKeying = async (logs: PlcLogEntry[]) => {
@@ -518,7 +1047,7 @@ const getPlcKeying = async (logs: PlcLogEntry[]) => {
 
 		const date = new Date(entry.createdAt);
 		const diff = Date.now() - date.getTime();
-		if (idx !== length - 1 && diff / (1000 * 60 * 60) <= 72) {
+		if (idx !== length - 1 && diff / (1000 * 60 * 60) > 72) {
 			return;
 		}
 
@@ -597,7 +1126,11 @@ const ErrorMessageView = (props: { step: number; error: { step: number; message:
 				}
 			})()}
 		>
-			{(error) => <p class="mt-4 text-[0.8125rem] font-medium leading-5 text-red-800">{error().message}</p>}
+			{(error) => (
+				<p class="mt-4 whitespace-pre-wrap text-[0.8125rem] font-medium leading-5 text-red-800">
+					{error().message}
+				</p>
+			)}
 		</Show>
 	);
 };

@@ -28,7 +28,13 @@ export type Service = v.InferOutput<typeof service>;
 
 const updateOp = v.object({
 	type: v.literal('plc_operation'),
-	rotationKeys: v.pipe(v.array(didKeyString), v.minLength(1)),
+	prev: v.nullable(v.string()),
+	sig: v.string(),
+	rotationKeys: v.pipe(
+		v.array(didKeyString),
+		v.minLength(1),
+		v.check((v) => new Set(v).size === v.length, `must contain unique keys`),
+	),
 	verificationMethods: v.record(v.string(), didKeyString),
 	alsoKnownAs: v.array(v.pipe(v.string(), v.url())),
 	services: v.record(
@@ -38,8 +44,6 @@ const updateOp = v.object({
 			endpoint: v.pipe(v.string(), v.url()),
 		}),
 	),
-	prev: v.nullable(v.string()),
-	sig: v.string(),
 });
 export type PlcUpdateOp = v.InferOutput<typeof updateOp>;
 
@@ -62,3 +66,6 @@ export const plcLogEntry = v.object({
 export type PlcLogEntry = v.InferOutput<typeof plcLogEntry>;
 
 export const plcLogEntries = v.array(plcLogEntry);
+
+export const updatePayload = v.omit(updateOp, ['type', 'prev', 'sig']);
+export type PlcUpdatePayload = v.InferOutput<typeof updatePayload>;
