@@ -1048,10 +1048,16 @@ const getPlcKeying = async (logs: PlcLogEntry[]) => {
 			return;
 		}
 
-		const date = new Date(entry.createdAt);
-		const diff = Date.now() - date.getTime();
-		if (idx !== length - 1 && diff / (1000 * 60 * 60) > 72) {
-			return;
+		// If it's not the last entry, check if the next entry ahead of this one
+		// was made within the last 72 hours.
+		if (idx !== length - 1) {
+			const next = logs[idx + 1]!;
+			const date = new Date(next.createdAt);
+			const diff = Date.now() - date.getTime();
+
+			if (diff / (1_000 * 60 * 60) > 72) {
+				return;
+			}
 		}
 
 		/** keys that potentially signed this operation */
