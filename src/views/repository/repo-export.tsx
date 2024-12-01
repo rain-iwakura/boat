@@ -171,6 +171,8 @@ const RepoExportPage = () => {
 
 							cleanup();
 							setPending(false);
+
+							console.error(err);
 							logger.error(`Critical error: ${err}`);
 						},
 					);

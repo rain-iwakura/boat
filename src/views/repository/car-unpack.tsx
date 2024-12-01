@@ -150,6 +150,8 @@ const UnpackCarPage = () => {
 
 				cleanup();
 				setPending(false);
+
+				console.error(err);
 				logger.error(`Critical error: ${err}\nFile might be malformed, or might not be a CAR archive`);
 			},
 		);
