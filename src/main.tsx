@@ -19,4 +19,8 @@ const App = () => {
 	return <Shell />;
 };
 
+if (Symbol.dispose === undefined) {
+	Object.defineProperty(Symbol, 'dispose', { value: Symbol.for(`Symbol.dispose`) });
+}
+
 render(App, document.body);
