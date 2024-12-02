@@ -324,8 +324,7 @@ const PlcUpdatePage = () => {
 							</Show>
 
 							<p class="mt-2 text-[0.8125rem] leading-5 text-gray-500">
-								This app runs locally on your browser, your credentials stays entirely within your device. It
-								is open source and can be audited as necessary.
+								This app runs locally on your browser, your credentials stays entirely within your device.
 							</p>
 						</Show>
 
@@ -413,8 +412,7 @@ const PlcUpdatePage = () => {
 							/>
 						</label>
 						<p hidden={step() !== 2} class="mt-2 text-[0.8125rem] leading-5 text-gray-500">
-							This app runs locally on your browser, your private key stays entirely within your device. It is
-							open source and can be audited as necessary.
+							This app runs locally on your browser, your private key stays entirely within your device.
 						</p>
 
 						<fieldset class="mt-6 flex flex-col gap-2">
