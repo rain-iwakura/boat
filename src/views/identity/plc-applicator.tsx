@@ -1,4 +1,4 @@
-import { createEffect, createSignal, JSX, Match, Show, Switch } from 'solid-js';
+import { createEffect, createSignal, JSX, Match, onCleanup, Show, Switch } from 'solid-js';
 import { createMutable, unwrap } from 'solid-js/store';
 
 import * as CBOR from '@atcute/cbor';
@@ -16,6 +16,8 @@ import { getPlcAuditLogs } from '~/api/queries/plc';
 import { DidDocument, getPdsEndpoint } from '~/api/types/did-doc';
 import { PlcLogEntry, PlcUpdateOp, PlcUpdatePayload, updatePayload } from '~/api/types/plc';
 import { DID_OR_HANDLE_RE, isDid } from '~/api/utils/strings';
+
+import { history } from '~/globals/navigation';
 
 import { useTitle } from '~/lib/navigation/router';
 import { assert } from '~/lib/utils/invariant';
@@ -50,6 +52,19 @@ const PlcUpdatePage = () => {
 	}>({});
 
 	useTitle(() => `Apply PLC operations — boat`);
+
+	createEffect(() => {
+		const $step = step();
+		if ($step > 1 && $step < 6) {
+			const cleanup = history.block((tx) => {
+				if (window.confirm(`Abort this action?`)) {
+					tx.retry();
+				}
+			});
+
+			onCleanup(cleanup);
+		}
+	});
 
 	return (
 		<fieldset disabled={pending()} class="contents">
