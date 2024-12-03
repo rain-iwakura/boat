@@ -312,7 +312,10 @@ const createEvents = <F extends (arg: any) => void>(): Events<F> => {
 
 			return () => {
 				const index = handlers.indexOf(fn);
-				handlers.splice(index, 1);
+
+				if (index !== -1) {
+					handlers.splice(index, 1);
+				}
 			};
 		},
 		call(arg) {
