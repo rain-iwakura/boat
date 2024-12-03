@@ -58,6 +58,7 @@ const PlcUpdatePage = () => {
 		if ($step > 1 && $step < 6) {
 			const cleanup = history.block((tx) => {
 				if (window.confirm(`Abort this action?`)) {
+					cleanup();
 					tx.retry();
 				}
 			});
