@@ -1,0 +1,471 @@
+{
+	"$schema": "https://json-schema.org/draft-07/schema",
+	"type": "object",
+	"title": "An atproto lexicon document",
+	"properties": {
+		"lexicon": { "type": "number", "const": 1 },
+		"id": {
+			"type": "string",
+			"pattern": "^[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+(\\.[a-zA-Z]([a-zA-Z]{0,61}[a-zA-Z])?)$"
+		},
+		"revision": { "type": "integer", "minimum": 0 },
+		"description": { "type": "string" },
+		"defs": {
+			"anyOf": [
+				{
+					"type": "object",
+					"properties": {
+						"main": { "$ref": "#/definitions/RecordSchema" },
+						"record": { "not": {} }
+					},
+					"required": ["main"],
+					"additionalProperties": { "$ref": "#/definitions/UserTypeSchema" }
+				},
+				{
+					"type": "object",
+					"properties": {
+						"main": {
+							"anyOf": [
+								{ "$ref": "#/definitions/XrpcQuerySchema" },
+								{ "$ref": "#/definitions/XrpcProcedureSchema" }
+							]
+						},
+						"params": { "not": {} },
+						"input": { "not": {} },
+						"output": { "not": {} },
+						"errors": { "not": {} }
+					},
+					"required": ["main"],
+					"additionalProperties": { "$ref": "#/definitions/UserTypeSchema" }
+				},
+				{
+					"type": "object",
+					"properties": {
+						"main": { "$ref": "#/definitions/XrpcSubscriptionSchema" },
+						"params": { "not": {} },
+						"message": { "not": {} }
+					},
+					"required": ["main"],
+					"additionalProperties": { "$ref": "#/definitions/UserTypeSchema" }
+				},
+				{
+					"type": "object",
+					"additionalProperties": { "$ref": "#/definitions/UserTypeSchema" }
+				}
+			]
+		},
+		"$schema": { "type": "string" }
+	},
+	"required": ["lexicon", "id", "defs"],
+	"additionalProperties": false,
+	"definitions": {
+		"ArraySchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "array" },
+				"description": { "type": "string" },
+				"items": {
+					"anyOf": [
+						{ "$ref": "#/definitions/PrimitiveSchema" },
+						{ "$ref": "#/definitions/IpldTypeSchema" },
+						{ "$ref": "#/definitions/BlobSchema" },
+						{ "$ref": "#/definitions/RefVariantSchema" }
+					]
+				},
+				"maxLength": { "type": "integer", "minimum": 0 },
+				"minLength": { "type": "integer", "minimum": 0 }
+			},
+			"required": ["type", "items"],
+			"additionalProperties": false
+		},
+		"BaseStringSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "string" },
+				"description": { "type": "string" },
+				"default": { "type": "string" },
+				"const": { "type": "string" },
+				"enum": { "type": "array", "items": { "type": "string" } },
+				"knownValues": { "type": "array", "items": { "type": "string" } }
+			},
+			"required": ["type"],
+			"additionalProperties": false
+		},
+		"BlobSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "blob" },
+				"description": { "type": "string" },
+				"accept": { "type": "array", "items": { "type": "string" } },
+				"maxSize": { "type": "integer", "minimum": 0 }
+			},
+			"required": ["type"],
+			"additionalProperties": false
+		},
+		"BooleanSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "boolean" },
+				"description": { "type": "string" },
+				"default": { "type": "boolean" },
+				"const": { "type": "boolean" }
+			},
+			"required": ["type"],
+			"additionalProperties": false
+		},
+		"BytesSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "bytes" },
+				"description": { "type": "string" },
+				"maxLength": { "type": "integer", "minimum": 0 },
+				"minLength": { "type": "integer", "minimum": 0 }
+			},
+			"required": ["type"],
+			"additionalProperties": false
+		},
+		"CidLinkSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "cid-link" },
+				"description": { "type": "string" }
+			},
+			"required": ["type"],
+			"additionalProperties": false
+		},
+		"FormattedStringSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "$ref": "#/definitions/BaseStringSchema/properties/type" },
+				"description": {
+					"$ref": "#/definitions/BaseStringSchema/properties/description"
+				},
+				"default": {
+					"$ref": "#/definitions/BaseStringSchema/properties/default"
+				},
+				"const": { "$ref": "#/definitions/BaseStringSchema/properties/const" },
+				"enum": { "$ref": "#/definitions/BaseStringSchema/properties/enum" },
+				"knownValues": {
+					"$ref": "#/definitions/BaseStringSchema/properties/knownValues"
+				},
+				"format": {
+					"type": "string",
+					"enum": [
+						"at-identifier",
+						"at-uri",
+						"cid",
+						"datetime",
+						"did",
+						"handle",
+						"language",
+						"nsid",
+						"record-key",
+						"tid",
+						"uri"
+					]
+				}
+			},
+			"required": ["type", "format"],
+			"additionalProperties": false
+		},
+		"IntegerSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "integer" },
+				"description": { "type": "string" },
+				"default": { "type": "integer", "minimum": 0 },
+				"const": { "type": "integer", "minimum": 0 },
+				"enum": {
+					"type": "array",
+					"items": { "type": "integer", "minimum": 0 }
+				},
+				"maximum": { "type": "integer", "minimum": 0 },
+				"minimum": { "type": "integer", "minimum": 0 }
+			},
+			"required": ["type"],
+			"additionalProperties": false
+		},
+		"IpldTypeSchema": {
+			"anyOf": [{ "$ref": "#/definitions/BytesSchema" }, { "$ref": "#/definitions/CidLinkSchema" }]
+		},
+		"MainUserTypeSchema": {
+			"anyOf": [
+				{ "$ref": "#/definitions/RecordSchema" },
+				{ "$ref": "#/definitions/XrpcQuerySchema" },
+				{ "$ref": "#/definitions/XrpcProcedureSchema" },
+				{ "$ref": "#/definitions/XrpcSubscriptionSchema" },
+				{ "$ref": "#/definitions/BlobSchema" },
+				{ "$ref": "#/definitions/ArraySchema" },
+				{ "$ref": "#/definitions/TokenSchema" },
+				{ "$ref": "#/definitions/ObjectSchema" },
+				{ "$ref": "#/definitions/BooleanSchema" },
+				{ "$ref": "#/definitions/IntegerSchema" },
+				{ "$ref": "#/definitions/StringSchema" },
+				{ "$ref": "#/definitions/BytesSchema" },
+				{ "$ref": "#/definitions/CidLinkSchema" },
+				{ "$ref": "#/definitions/UnknownSchema" }
+			]
+		},
+		"ObjectSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "object" },
+				"description": { "type": "string" },
+				"required": {
+					"type": "array",
+					"items": { "type": "string" },
+					"default": []
+				},
+				"nullable": {
+					"type": "array",
+					"items": { "type": "string" },
+					"default": []
+				},
+				"properties": {
+					"type": "object",
+					"additionalProperties": {
+						"anyOf": [
+							{ "$ref": "#/definitions/RefVariantSchema" },
+							{ "$ref": "#/definitions/IpldTypeSchema" },
+							{ "$ref": "#/definitions/ArraySchema" },
+							{ "$ref": "#/definitions/BlobSchema" },
+							{ "$ref": "#/definitions/PrimitiveSchema" }
+						]
+					}
+				}
+			},
+			"required": ["type", "properties"],
+			"additionalProperties": false
+		},
+		"PrimitiveArraySchema": {
+			"type": "object",
+			"properties": {
+				"type": { "$ref": "#/definitions/ArraySchema/properties/type" },
+				"description": {
+					"$ref": "#/definitions/ArraySchema/properties/description"
+				},
+				"items": { "$ref": "#/definitions/PrimitiveSchema" },
+				"maxLength": {
+					"$ref": "#/definitions/ArraySchema/properties/maxLength"
+				},
+				"minLength": {
+					"$ref": "#/definitions/ArraySchema/properties/minLength"
+				}
+			},
+			"required": ["type", "items"],
+			"additionalProperties": false
+		},
+		"PrimitiveSchema": {
+			"anyOf": [
+				{ "$ref": "#/definitions/BooleanSchema" },
+				{ "$ref": "#/definitions/IntegerSchema" },
+				{ "$ref": "#/definitions/StringSchema" },
+				{ "$ref": "#/definitions/UnknownSchema" }
+			]
+		},
+		"RecordSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "record" },
+				"description": { "type": "string" },
+				"key": { "type": "string" },
+				"record": { "$ref": "#/definitions/ObjectSchema" }
+			},
+			"required": ["type", "record"],
+			"additionalProperties": false
+		},
+		"RefSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "ref" },
+				"description": { "type": "string" },
+				"ref": {
+					"type": "string",
+					"minLength": 1,
+					"pattern": "^(?=.)(?:[a-zA-Z](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+(?:\\.[a-zA-Z](?:[a-zA-Z]{0,61}[a-zA-Z])?))?(?:#[a-zA-Z](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)?$"
+				}
+			},
+			"required": ["type", "ref"],
+			"additionalProperties": false
+		},
+		"RefUnionSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "union" },
+				"description": { "type": "string" },
+				"refs": {
+					"type": "array",
+					"items": { "$ref": "#/definitions/RefSchema/properties/ref" }
+				},
+				"closed": { "type": "boolean", "default": false }
+			},
+			"required": ["type", "refs"],
+			"additionalProperties": false
+		},
+		"RefVariantSchema": {
+			"anyOf": [{ "$ref": "#/definitions/RefSchema" }, { "$ref": "#/definitions/RefUnionSchema" }]
+		},
+		"StringSchema": {
+			"anyOf": [
+				{ "$ref": "#/definitions/UnformattedStringSchema" },
+				{ "$ref": "#/definitions/FormattedStringSchema" }
+			]
+		},
+		"TokenSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "token" },
+				"description": { "type": "string" }
+			},
+			"required": ["type"],
+			"additionalProperties": false
+		},
+		"UnformattedStringSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "$ref": "#/definitions/BaseStringSchema/properties/type" },
+				"description": {
+					"$ref": "#/definitions/BaseStringSchema/properties/description"
+				},
+				"default": {
+					"$ref": "#/definitions/BaseStringSchema/properties/default"
+				},
+				"const": { "$ref": "#/definitions/BaseStringSchema/properties/const" },
+				"enum": { "$ref": "#/definitions/BaseStringSchema/properties/enum" },
+				"knownValues": {
+					"$ref": "#/definitions/BaseStringSchema/properties/knownValues"
+				},
+				"format": { "not": {} },
+				"maxLength": { "type": "integer", "exclusiveMinimum": 0 },
+				"minLength": { "type": "integer", "exclusiveMinimum": 0 },
+				"maxGraphemes": { "type": "integer", "exclusiveMinimum": 0 },
+				"minGraphemes": { "type": "integer", "exclusiveMinimum": 0 }
+			},
+			"required": ["type"],
+			"additionalProperties": false
+		},
+		"UnknownSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "unknown" },
+				"description": { "type": "string" }
+			},
+			"required": ["type"],
+			"additionalProperties": false
+		},
+		"UserTypeSchema": {
+			"anyOf": [
+				{ "$ref": "#/definitions/BlobSchema" },
+				{ "$ref": "#/definitions/ArraySchema" },
+				{ "$ref": "#/definitions/TokenSchema" },
+				{ "$ref": "#/definitions/ObjectSchema" },
+				{ "$ref": "#/definitions/BooleanSchema" },
+				{ "$ref": "#/definitions/IntegerSchema" },
+				{ "$ref": "#/definitions/StringSchema" },
+				{ "$ref": "#/definitions/BytesSchema" },
+				{ "$ref": "#/definitions/CidLinkSchema" },
+				{ "$ref": "#/definitions/UnknownSchema" }
+			]
+		},
+		"XrpcBodySchema": {
+			"type": "object",
+			"properties": {
+				"description": { "type": "string" },
+				"encoding": { "type": "string" },
+				"schema": {
+					"anyOf": [{ "$ref": "#/definitions/RefVariantSchema" }, { "$ref": "#/definitions/ObjectSchema" }]
+				}
+			},
+			"required": ["encoding"],
+			"additionalProperties": false
+		},
+		"XrpcErrorSchema": {
+			"type": "object",
+			"properties": {
+				"name": { "type": "string" },
+				"description": { "type": "string" }
+			},
+			"required": ["name"],
+			"additionalProperties": false
+		},
+		"XrpcParametersSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "params" },
+				"description": { "type": "string" },
+				"required": {
+					"type": "array",
+					"items": { "type": "string" },
+					"default": []
+				},
+				"properties": {
+					"type": "object",
+					"additionalProperties": {
+						"anyOf": [
+							{ "$ref": "#/definitions/PrimitiveSchema" },
+							{ "$ref": "#/definitions/PrimitiveArraySchema" }
+						]
+					}
+				}
+			},
+			"required": ["type", "properties"],
+			"additionalProperties": false
+		},
+		"XrpcProcedureSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "procedure" },
+				"description": { "type": "string" },
+				"parameters": { "$ref": "#/definitions/XrpcParametersSchema" },
+				"input": { "$ref": "#/definitions/XrpcBodySchema" },
+				"output": { "$ref": "#/definitions/XrpcBodySchema" },
+				"errors": {
+					"type": "array",
+					"items": { "$ref": "#/definitions/XrpcErrorSchema" }
+				}
+			},
+			"required": ["type"],
+			"additionalProperties": false
+		},
+		"XrpcQuerySchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "query" },
+				"description": { "type": "string" },
+				"parameters": { "$ref": "#/definitions/XrpcParametersSchema" },
+				"output": { "$ref": "#/definitions/XrpcBodySchema" },
+				"errors": {
+					"type": "array",
+					"items": { "$ref": "#/definitions/XrpcErrorSchema" }
+				}
+			},
+			"required": ["type"],
+			"additionalProperties": false
+		},
+		"XrpcSubscriptionMessageSchema": {
+			"type": "object",
+			"properties": {
+				"description": { "type": "string" },
+				"schema": {
+					"anyOf": [{ "$ref": "#/definitions/RefVariantSchema" }, { "$ref": "#/definitions/ObjectSchema" }]
+				}
+			},
+			"additionalProperties": false
+		},
+		"XrpcSubscriptionSchema": {
+			"type": "object",
+			"properties": {
+				"type": { "type": "string", "const": "subscription" },
+				"description": { "type": "string" },
+				"parameters": { "$ref": "#/definitions/XrpcParametersSchema" },
+				"message": { "$ref": "#/definitions/XrpcSubscriptionMessageSchema" },
+				"errors": {
+					"type": "array",
+					"items": { "$ref": "#/definitions/XrpcErrorSchema" }
+				}
+			},
+			"required": ["type"],
+			"additionalProperties": false
+		}
+	}
+}
