@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 
-import { didKeyString, didString, handleString, serviceUrlString } from './strings';
+import { didKeyString, didString, handleString, serviceUrlString, urlString } from './strings';
 
 export const legacyGenesisOp = v.object({
 	type: v.literal('create'),
@@ -22,7 +22,7 @@ export type PlcTombstoneOp = v.InferOutput<typeof tombstoneOp>;
 
 export const service = v.object({
 	type: v.string(),
-	endpoint: v.pipe(v.string(), v.url()),
+	endpoint: urlString,
 });
 export type Service = v.InferOutput<typeof service>;
 
@@ -36,14 +36,8 @@ const updateOp = v.object({
 		v.check((v) => new Set(v).size === v.length, `must contain unique keys`),
 	),
 	verificationMethods: v.record(v.string(), didKeyString),
-	alsoKnownAs: v.array(v.pipe(v.string(), v.url())),
-	services: v.record(
-		v.string(),
-		v.object({
-			type: v.string(),
-			endpoint: v.pipe(v.string(), v.url()),
-		}),
-	),
+	alsoKnownAs: v.array(urlString),
+	services: v.record(v.string(), service),
 });
 export type PlcUpdateOp = v.InferOutput<typeof updateOp>;
 
@@ -86,7 +80,7 @@ export const updatePayload = v.object({
 			}),
 			v.object({
 				type: v.string(),
-				endpoint: v.pipe(v.string(), v.url()),
+				endpoint: urlString,
 			}),
 		]),
 	),
