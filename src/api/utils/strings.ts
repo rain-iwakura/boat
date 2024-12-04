@@ -1,6 +1,6 @@
 import type { At, Records } from '@atcute/client/lexicons';
 
-import { assert } from '../../lib/utils/invariant';
+import { assert } from '~/lib/utils/invariant';
 
 export const ATURI_RE =
 	/^at:\/\/(did:[a-zA-Z0-9._:%\-]+|[a-zA-Z0-9-.]+)\/([a-zA-Z0-9-.]+)\/([a-zA-Z0-9._~:@!$&%')(*+,;=\-]+)(?:#(\/[a-zA-Z0-9._~:@!$&%')(*+,;=\-[\]/\\]*))?$/;

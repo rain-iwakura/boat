@@ -70,20 +70,37 @@ export const updatePayload = v.object({
 				type: v.string(),
 				endpoint: urlString,
 			}),
-			v.forward(
-				v.check((input) => {
-					switch (input.type) {
-						case 'AtprotoPersonalDataServer':
-						case 'AtprotoLabeler':
-						case 'BskyFeedGenerator':
-						case 'BskyNotificationService':
-							return v.is(serviceUrlString, input.endpoint);
-					}
+			v.rawTransform(({ dataset, addIssue, NEVER }) => {
+				const input = dataset.value;
 
-					return true;
-				}, 'must be a valid atproto service endpoint'),
-				['endpoint'],
-			),
+				switch (input.type) {
+					case 'AtprotoPersonalDataServer':
+					case 'AtprotoLabeler':
+					case 'BskyFeedGenerator':
+					case 'BskyNotificationService': {
+						if (!v.is(serviceUrlString, input.endpoint)) {
+							addIssue({
+								message: `must be a valid atproto service endpoint`,
+								path: [
+									{
+										type: 'object',
+										origin: 'value',
+										input: input,
+										key: 'endpoint',
+										value: input.endpoint,
+									},
+								],
+							});
+
+							return NEVER;
+						}
+
+						return { ...input, endpoint: input.endpoint.replace(/\/$/, '') };
+					}
+				}
+
+				return input;
+			}),
 		),
 	),
 });
