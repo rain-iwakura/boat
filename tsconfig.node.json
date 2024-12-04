@@ -4,7 +4,7 @@
 		"useDefineForClassFields": false,
 		"module": "NodeNext",
 		"lib": ["ESNext"],
-		"types": ["bun"],
+		"types": ["node"],
 		"skipLibCheck": true,
 
 		"moduleResolution": "NodeNext",
@@ -19,5 +19,5 @@
 		"noFallthroughCasesInSwitch": true,
 		"noUncheckedSideEffectImports": true,
 	},
-	"include": ["vite.config.ts", "tests/"],
+	"include": ["vite.config.ts"],
 }
