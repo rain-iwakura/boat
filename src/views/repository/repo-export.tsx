@@ -3,10 +3,10 @@ import { createSignal } from 'solid-js';
 import * as v from 'valibot';
 
 import { At } from '@atcute/client/lexicons';
-import { getPdsEndpoint } from '@atcute/client/utils/did';
 
 import { getDidDocument } from '~/api/queries/did-doc';
 import { resolveHandleViaAppView, resolveHandleViaPds } from '~/api/queries/handle';
+import { getPdsEndpoint } from '~/api/types/did-doc';
 import { serviceUrlString } from '~/api/types/strings';
 import { DID_OR_HANDLE_RE, isDid } from '~/api/utils/strings';
 
