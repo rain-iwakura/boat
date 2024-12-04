@@ -24,5 +24,5 @@ export const serviceUrlString = v.pipe(
 
 export const didKeyString = v.pipe(
 	v.string(),
-	v.check((str) => str.length >= 9 && str.startsWith('did:key:')),
+	v.regex(/^did:key:z[a-km-zA-HJ-NP-Z1-9]+$/, 'must be a valid did:key'),
 );
