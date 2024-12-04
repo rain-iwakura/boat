@@ -33,7 +33,7 @@ const service = v.pipe(
 
 export const didDocument = v.object({
 	id: didString,
-	alsoKnownAs: v.optional(v.array(v.pipe(v.string(), v.url())), []),
+	alsoKnownAs: v.optional(v.array(urlString), []),
 	verificationMethod: v.optional(v.array(verificationMethod), []),
 	service: v.optional(
 		v.pipe(
