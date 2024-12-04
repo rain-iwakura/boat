@@ -9,25 +9,27 @@ const verificationMethod = v.object({
 	publicKeyMultibase: v.optional(v.string()),
 });
 
-const service = v.variant('type', [
-	v.object({
-		id: v.string(),
-		type: v.union([
-			v.union([
-				v.literal('AtprotoPersonalDataServer'),
-				v.literal('AtprotoLabeler'),
-				v.literal('BskyFeedGenerator'),
-				v.literal('BskyNotificationService'),
-			]),
-		]),
-		serviceEndpoint: serviceUrlString,
-	}),
+const service = v.pipe(
 	v.object({
 		id: v.string(),
 		type: v.string(),
 		serviceEndpoint: v.union([urlString, v.record(v.string(), urlString), v.array(urlString)]),
 	}),
-]);
+	v.forward(
+		v.check((input) => {
+			switch (input.type) {
+				case 'AtprotoPersonalDataServer':
+				case 'AtprotoLabeler':
+				case 'BskyFeedGenerator':
+				case 'BskyNotificationService':
+					return v.is(serviceUrlString, input.serviceEndpoint);
+			}
+
+			return true;
+		}, 'must be a valid atproto service endpoint'),
+		['serviceEndpoint'],
+	),
+);
 
 export const didDocument = v.object({
 	id: didString,

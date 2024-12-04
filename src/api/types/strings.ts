@@ -19,7 +19,7 @@ export const serviceUrlString = v.pipe(
 			url.search === '' &&
 			url.hash === ''
 		);
-	}, 'must be a valid service url'),
+	}, 'must be a valid atproto service url'),
 );
 
 export const didKeyString = v.pipe(

@@ -65,24 +65,26 @@ export const updatePayload = v.object({
 	...v.omit(updateOp, ['type', 'prev', 'sig', 'services']).entries,
 	services: v.record(
 		v.string(),
-		v.variant('type', [
-			v.object({
-				type: v.union([
-					v.literal('AtprotoPersonalDataServer'),
-					v.literal('AtprotoLabeler'),
-					v.literal('BskyFeedGenerator'),
-					v.literal('BskyNotificationService'),
-				]),
-				endpoint: v.pipe(
-					serviceUrlString,
-					v.transform((urlString) => urlString.replace(/\/$/, '')),
-				),
-			}),
+		v.pipe(
 			v.object({
 				type: v.string(),
 				endpoint: urlString,
 			}),
-		]),
+			v.forward(
+				v.check((input) => {
+					switch (input.type) {
+						case 'AtprotoPersonalDataServer':
+						case 'AtprotoLabeler':
+						case 'BskyFeedGenerator':
+						case 'BskyNotificationService':
+							return v.is(serviceUrlString, input.endpoint);
+					}
+
+					return true;
+				}, 'must be a valid atproto service endpoint'),
+				['endpoint'],
+			),
+		),
 	),
 });
 export type PlcUpdatePayload = v.InferOutput<typeof updatePayload>;
