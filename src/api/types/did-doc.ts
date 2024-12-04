@@ -5,8 +5,10 @@ import { didString, serviceUrlString, urlString } from './strings';
 const verificationMethod = v.object({
 	id: v.string(),
 	type: v.string(),
-	controller: v.string(),
-	publicKeyMultibase: v.optional(v.string()),
+	controller: didString,
+	publicKeyMultibase: v.optional(
+		v.pipe(v.string(), v.regex(/^z[a-km-zA-HJ-NP-Z1-9]+$|^u[a-zA-Z0-9]$/, 'must be a valid multibase value')),
+	),
 });
 
 const service = v.pipe(
