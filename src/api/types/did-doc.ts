@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 
-import { didString, serviceUrlString } from './strings';
+import { didString, serviceUrlString, urlString } from './strings';
 
 const verificationMethod = v.object({
 	id: v.string(),
@@ -9,17 +9,71 @@ const verificationMethod = v.object({
 	publicKeyMultibase: v.optional(v.string()),
 });
 
-const service = v.object({
-	id: v.string(),
-	type: v.string(),
-	serviceEndpoint: v.union([v.string(), v.record(v.string(), v.unknown())]),
-});
+const service = v.variant('type', [
+	v.object({
+		id: v.string(),
+		type: v.union([
+			v.union([
+				v.literal('AtprotoPersonalDataServer'),
+				v.literal('AtprotoLabeler'),
+				v.literal('BskyFeedGenerator'),
+				v.literal('BskyNotificationService'),
+			]),
+		]),
+		serviceEndpoint: serviceUrlString,
+	}),
+	v.object({
+		id: v.string(),
+		type: v.string(),
+		serviceEndpoint: v.union([urlString, v.record(v.string(), urlString), v.array(urlString)]),
+	}),
+]);
 
 export const didDocument = v.object({
 	id: didString,
 	alsoKnownAs: v.optional(v.array(v.pipe(v.string(), v.url())), []),
 	verificationMethod: v.optional(v.array(verificationMethod), []),
-	service: v.optional(v.array(service), []),
+	service: v.optional(
+		v.pipe(
+			v.array(service),
+			v.rawCheck(({ dataset, addIssue }) => {
+				if (dataset.typed) {
+					const set = new Set<string>();
+					const services = dataset.value;
+
+					for (let idx = 0, len = services.length; idx < len; idx++) {
+						const service = services[idx];
+						const id = service.id;
+
+						if (!set.has(id)) {
+							set.add(id);
+						} else {
+							addIssue({
+								message: `duplicate service id`,
+								path: [
+									{
+										type: 'array',
+										origin: 'value',
+										input: services,
+										key: idx,
+										value: service,
+									},
+									{
+										type: 'object',
+										origin: 'value',
+										input: service,
+										key: 'id',
+										value: id,
+									},
+								],
+							});
+						}
+					}
+				}
+			}),
+		),
+		[],
+	),
 });
 
 export type DidDocument = v.InferOutput<typeof didDocument>;
@@ -42,8 +96,5 @@ export const getServiceEndpoint = (
 		return undefined;
 	}
 
-	const endpoint = found.serviceEndpoint;
-	if (v.is(serviceUrlString, found.serviceEndpoint)) {
-		return endpoint;
-	}
+	return found.serviceEndpoint;
 };
