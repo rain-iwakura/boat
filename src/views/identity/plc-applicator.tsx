@@ -617,7 +617,7 @@ const PlcUpdatePage = () => {
 						return;
 					}
 
-					states.payload = json as any;
+					states.payload = result.output;
 
 					setStep(5);
 				}}

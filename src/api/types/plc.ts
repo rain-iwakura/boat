@@ -67,5 +67,28 @@ export type PlcLogEntry = v.InferOutput<typeof plcLogEntry>;
 
 export const plcLogEntries = v.array(plcLogEntry);
 
-export const updatePayload = v.omit(updateOp, ['type', 'prev', 'sig']);
+export const updatePayload = v.object({
+	...v.omit(updateOp, ['type', 'prev', 'sig', 'services']).entries,
+	services: v.record(
+		v.string(),
+		v.variant('type', [
+			v.object({
+				type: v.union([
+					v.literal('AtprotoPersonalDataServer'),
+					v.literal('AtprotoLabeler'),
+					v.literal('BskyFeedGenerator'),
+					v.literal('BskyNotificationService'),
+				]),
+				endpoint: v.pipe(
+					serviceUrlString,
+					v.transform((urlString) => urlString.replace(/\/$/, '')),
+				),
+			}),
+			v.object({
+				type: v.string(),
+				endpoint: v.pipe(v.string(), v.url()),
+			}),
+		]),
+	),
+});
 export type PlcUpdatePayload = v.InferOutput<typeof updatePayload>;
