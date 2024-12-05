@@ -17,7 +17,7 @@ const service = v
 	.object({
 		id: v.string(),
 		type: v.string(),
-		serviceEndpoint: v.union(urlString, v.record(urlString), v.array(urlString)),
+		serviceEndpoint: v.union(v.string(), v.record(v.string()), v.array(v.string())),
 	})
 	.chain((input) => {
 		switch (input.type) {

@@ -20,7 +20,7 @@ const tombstoneOp = v.object({
 
 const service = v.object({
 	type: v.string().assert((input) => input.length <= 256, `service type too long (max 256)`),
-	endpoint: urlString.assert((input) => input.length <= 512, `service endpoint too long (max 512)`),
+	endpoint: v.string().assert((input) => input.length <= 512, `service endpoint too long (max 512)`),
 });
 export type Service = v.Infer<typeof service>;
 
