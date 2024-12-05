@@ -25,7 +25,6 @@ export default defineConfig({
 						'@atcute/client',
 						'@mary/events',
 
-						'src/globals/multiagent.ts',
 						'src/globals/navigation.ts',
 						'src/globals/preferences.ts',
 						'src/globals/rpc.ts',
