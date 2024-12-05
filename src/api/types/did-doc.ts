@@ -9,7 +9,7 @@ const verificationMethod = v.object({
 	publicKeyMultibase: v.optional(
 		v.pipe(
 			v.string(),
-			v.regex(/^z[a-km-zA-HJ-NP-Z1-9]+$|^u[a-zA-Z0-9]+$/, 'must be a valid multibase value'),
+			v.regex(/^z[a-km-zA-HJ-NP-Z1-9]+$|^u[a-zA-Z0-9-_]+$/, 'must be a valid multibase value'),
 		),
 	),
 });
