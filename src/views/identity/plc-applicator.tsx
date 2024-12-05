@@ -7,6 +7,7 @@ import { At, ComAtprotoIdentityGetRecommendedDidCredentials } from '@atcute/clie
 
 import { P256Keypair, Secp256k1Keypair, verifySignature } from '@atproto/crypto';
 import * as uint8arrays from 'uint8arrays';
+import basex from 'base-x'
 
 import { getDidDocument } from '~/api/queries/did-doc';
 import { resolveHandleViaAppView } from '~/api/queries/handle';
@@ -19,8 +20,10 @@ import { history } from '~/globals/navigation';
 
 import { useTitle } from '~/lib/navigation/router';
 import { assert } from '~/lib/utils/invariant';
+import { toHex } from '~/lib/utils/hex';
 
 const EMAIL_OTP_RE = /^([a-zA-Z0-9]{5})[\- ]?([a-zA-Z0-9]{5})$/;
+const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
 const PlcUpdatePage = () => {
 	const [step, setStep] = createSignal(1);
@@ -360,12 +363,17 @@ const PlcUpdatePage = () => {
 								setPending(true);
 								setError();
 
-								const key = form.get('key') as string;
-								const type = form.get('type') as 'secp256k1' | 'nistp256';
+								var key = form.get('key') as string;
+								const type = form.get('type') as 'secp256k1' | 'nistp256' | 'nistp256b58';
 
 								let keypair: P256Keypair | Secp256k1Keypair;
 
 								if (type === 'nistp256') {
+									keypair = await P256Keypair.import(key);
+								} else if (type == 'nistp256b58') {
+									var bs58 = basex(BASE58);
+									let key_bytes = bs58.decode(key.substring(1)).slice(2);
+									key = toHex(key_bytes).toLowerCase();
 									keypair = await P256Keypair.import(key);
 								} else if (type === 'secp256k1') {
 									keypair = await Secp256k1Keypair.import(key);
@@ -391,7 +399,7 @@ const PlcUpdatePage = () => {
 						}}
 					>
 						<label class="flex flex-col gap-2">
-							<span class="font-semibold text-gray-600">Hex-encoded private key</span>
+							<span class="font-semibold text-gray-600">Private key</span>
 							<input
 								ref={(node) => {
 									createEffect(() => {
@@ -406,7 +414,6 @@ const PlcUpdatePage = () => {
 								autocomplete="off"
 								autocorrect="off"
 								placeholder="a5973930f9d348..."
-								pattern="[0-9a-f]+"
 								class="rounded border border-gray-400 px-3 py-2 font-mono text-sm placeholder:text-gray-400 focus:border-purple-800 focus:ring-1 focus:ring-purple-800 focus:ring-offset-0"
 							/>
 						</label>
@@ -425,7 +432,7 @@ const PlcUpdatePage = () => {
 									value="secp256k1"
 									class="border-gray-400 text-purple-800 focus:ring-purple-800"
 								/>
-								<span class="text-sm">ES256K (secp256k1) private key</span>
+								<span class="text-sm">ES256K (secp256k Hex) private key</span>
 							</label>
 
 							<label class="flex items-start gap-3">
@@ -436,7 +443,18 @@ const PlcUpdatePage = () => {
 									value="nistp256"
 									class="border-gray-400 text-purple-800 focus:ring-purple-800"
 								/>
-								<span class="text-sm">ES256 (nistp256) private key</span>
+								<span class="text-sm">ES256 (nistp256 Hex) private key</span>
+							</label>
+
+							<label class="flex items-start gap-3">
+								<input
+									type="radio"
+									name="type"
+									required
+									value="nistp256b58"
+									class="border-gray-400 text-purple-800 focus:ring-purple-800"
+								/>
+								<span class="text-sm">ES256 (nistp256 Base58) private key</span>
 							</label>
 						</fieldset>
 
