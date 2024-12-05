@@ -9,6 +9,8 @@ export const DID_RE = /^did:([a-z]+):([a-zA-Z0-9._:%\-]*[a-zA-Z0-9._\-])$/;
 
 export const DID_WEB_RE = /^([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*(?:\.[a-zA-Z]{2,}))$/;
 
+export const DID_KEY_RE = /^did:key:z[a-km-zA-HJ-NP-Z1-9]+$/;
+
 export const HANDLE_RE = /^[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*(?:\.[a-zA-Z]{2,})$/;
 
 export const DID_OR_HANDLE_RE =

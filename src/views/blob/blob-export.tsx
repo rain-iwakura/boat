@@ -1,6 +1,5 @@
 import { FileSystemWritableFileStream, showSaveFilePicker } from 'native-file-system-adapter';
 import { createSignal } from 'solid-js';
-import * as v from 'valibot';
 
 import { simpleFetchHandler, XRPC, XRPCError } from '@atcute/client';
 import { At } from '@atcute/client/lexicons';
@@ -9,7 +8,7 @@ import { writeTarEntry } from '@mary/tar';
 import { getDidDocument } from '~/api/queries/did-doc';
 import { resolveHandleViaAppView, resolveHandleViaPds } from '~/api/queries/handle';
 import { getPdsEndpoint } from '~/api/types/did-doc';
-import { serviceUrlString } from '~/api/types/strings';
+import { isServiceUrlString } from '~/api/types/strings';
 import { DID_OR_HANDLE_RE, isDid } from '~/api/utils/strings';
 
 import { makeAbortable } from '~/lib/utils/abortable';
@@ -276,7 +275,7 @@ const BlobExportPage = () => {
 								const input = ev.currentTarget;
 								const value = input.value;
 
-								if (value !== '' && !v.is(serviceUrlString, value)) {
+								if (value !== '' && isServiceUrlString(value)) {
 									input.setCustomValidity('Must be a valid service URL');
 								} else {
 									input.setCustomValidity('');

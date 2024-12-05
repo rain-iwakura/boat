@@ -1,5 +1,3 @@
-import * as v from 'valibot';
-
 import { At } from '@atcute/client/lexicons';
 
 import { plcLogEntries } from '../types/plc';
@@ -12,5 +10,5 @@ export const getPlcAuditLogs = async ({ did, signal }: { did: At.DID; signal?: A
 	}
 
 	const json = await response.json();
-	return v.parse(plcLogEntries, json);
+	return plcLogEntries.parse(json);
 };

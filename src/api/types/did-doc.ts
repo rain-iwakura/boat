@@ -1,90 +1,68 @@
-import * as v from 'valibot';
+import * as v from '@badrap/valita';
 
 import { didString, serviceUrlString, urlString } from './strings';
+
+const PUBLIC_KEY_MULTIBASE_RE = /^z[a-km-zA-HJ-NP-Z1-9]+$/;
 
 const verificationMethod = v.object({
 	id: v.string(),
 	type: v.string(),
 	controller: didString,
-	publicKeyMultibase: v.optional(
-		v.pipe(
-			v.string(),
-			v.regex(/^z[a-km-zA-HJ-NP-Z1-9]+$|^u[a-zA-Z0-9-_]+$/, 'must be a valid multibase value'),
-		),
-	),
+	publicKeyMultibase: v
+		.string()
+		.assert((input) => PUBLIC_KEY_MULTIBASE_RE.test(input), `must be a valid base58btc multibase key`),
 });
 
-const service = v.pipe(
-	v.object({
+const service = v
+	.object({
 		id: v.string(),
 		type: v.string(),
-		serviceEndpoint: v.union([urlString, v.record(v.string(), urlString), v.array(urlString)]),
-	}),
-	v.forward(
-		v.check((input) => {
-			switch (input.type) {
-				case 'AtprotoPersonalDataServer':
-				case 'AtprotoLabeler':
-				case 'BskyFeedGenerator':
-				case 'BskyNotificationService':
-					return v.is(serviceUrlString, input.serviceEndpoint);
+		serviceEndpoint: v.union(urlString, v.record(urlString), v.array(urlString)),
+	})
+	.chain((input) => {
+		switch (input.type) {
+			case 'AtprotoPersonalDataServer':
+			case 'AtprotoLabeler':
+			case 'BskyFeedGenerator':
+			case 'BskyNotificationService': {
+				const result = serviceUrlString.try(input.serviceEndpoint);
+				if (!result.ok) {
+					return v.err({
+						message: `must be a valid atproto service url`,
+						path: ['serviceEndpoint'],
+					});
+				}
 			}
+		}
 
-			return true;
-		}, 'must be a valid atproto service endpoint'),
-		['serviceEndpoint'],
-	),
-);
+		return v.ok(input);
+	});
 
 export const didDocument = v.object({
 	'@context': v.array(urlString),
 	id: didString,
-	alsoKnownAs: v.optional(v.array(urlString), []),
-	verificationMethod: v.optional(v.array(verificationMethod), []),
-	service: v.optional(
-		v.pipe(
-			v.array(service),
-			v.rawCheck(({ dataset, addIssue }) => {
-				if (dataset.typed) {
-					const set = new Set<string>();
-					const services = dataset.value;
+	alsoKnownAs: v.array(urlString).optional(() => []),
+	verificationMethod: v.array(verificationMethod).optional(() => []),
+	service: v.array(service).chain((input) => {
+		for (let i = 0, len = input.length; i < len; i++) {
+			const service = input[i];
+			const id = service.id;
 
-					for (let idx = 0, len = services.length; idx < len; idx++) {
-						const service = services[idx];
-						const id = service.id;
-
-						if (!set.has(id)) {
-							set.add(id);
-						} else {
-							addIssue({
-								message: `duplicate service id`,
-								path: [
-									{
-										type: 'array',
-										origin: 'value',
-										input: services,
-										key: idx,
-										value: service,
-									},
-									{
-										type: 'object',
-										origin: 'value',
-										input: service,
-										key: 'id',
-										value: id,
-									},
-								],
-							});
-						}
-					}
+			for (let j = 0; j < i; j++) {
+				if (input[j].id === id) {
+					return v.err({
+						message: `duplicate service id`,
+						path: [i, 'id'],
+					});
 				}
-			}),
-		),
-		[],
-	),
+			}
+		}
+
+		return v.ok(input);
+	}),
 });
 
-export type DidDocument = v.InferOutput<typeof didDocument>;
+export type DidDocument = v.Infer<typeof didDocument>;
 
 export const getPdsEndpoint = (doc: DidDocument): string | undefined => {
 	return getServiceEndpoint(doc, '#atproto_pds', 'AtprotoPersonalDataServer');

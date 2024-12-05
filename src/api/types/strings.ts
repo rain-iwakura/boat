@@ -1,28 +1,28 @@
-import * as v from 'valibot';
+import * as v from '@badrap/valita';
 
-import { DID_RE, HANDLE_RE } from '../utils/strings';
+import { DID_KEY_RE, DID_RE, HANDLE_RE } from '../utils/strings';
 
-export const didString = v.pipe(v.string(), v.regex(DID_RE, 'must be a valid did'));
-export const handleString = v.pipe(v.string(), v.regex(HANDLE_RE, 'must be a valid handle'));
+export const didString = v.string().assert((input) => DID_RE.test(input), `must be a valid did`);
 
-export const urlString = v.pipe(v.string(), v.url());
+export const didKeyString = v.string().assert((input) => DID_KEY_RE.test(input), `must be a valid did:key`);
 
-export const serviceUrlString = v.pipe(
-	v.string(),
-	v.check((urlString) => {
-		const url = URL.parse(urlString);
+export const handleString = v.string().assert((input) => HANDLE_RE.test(input), `must be a valid handle`);
 
-		return (
-			url !== null &&
-			(url.protocol === 'https:' || url.protocol === 'http:') &&
-			url.pathname === '/' &&
-			url.search === '' &&
-			url.hash === ''
-		);
-	}, 'must be a valid atproto service url'),
-);
+export const urlString = v.string().assert((input) => URL.canParse(input), `must be a valid url`);
 
-export const didKeyString = v.pipe(
-	v.string(),
-	v.regex(/^did:key:z[a-km-zA-HJ-NP-Z1-9]+$/, 'must be a valid did:key'),
-);
+export const serviceUrlString = v.string().assert((input) => {
+	const url = URL.parse(input);
+
+	return (
+		url !== null &&
+		(url.protocol === 'https:' || url.protocol === 'http:') &&
+		url.pathname === '/' &&
+		url.search === '' &&
+		url.hash === ''
+	);
+}, `must be a valid atproto service url`);
+
+export const isServiceUrlString = (str: string) => {
+	const result = serviceUrlString.try(str);
+	return result.ok;
+};

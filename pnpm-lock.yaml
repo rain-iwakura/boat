@@ -26,6 +26,9 @@ importers:
       '@atproto/crypto':
         specifier: ^0.4.2
         version: 0.4.2
+      '@badrap/valita':
+        specifier: ^0.4.2
+        version: 0.4.2
       '@mary/events':
         specifier: npm:@jsr/mary__events@^0.1.0
         version: '@jsr/mary__events@0.1.0'
@@ -47,9 +50,6 @@ importers:
       uint8arrays:
         specifier: ^5.1.0
         version: 5.1.0
-      valibot:
-        specifier: 1.0.0-beta.2
-        version: 1.0.0-beta.2(typescript@5.7.0-beta)
     devDependencies:
       '@tailwindcss/forms':
         specifier: ^0.5.9
@@ -197,6 +197,10 @@ packages:
   '@babel/types@7.26.0':
     resolution: {integrity: sha512-Z/yiTPj+lDVnF7lWeKCIJzaIkI0vYO87dMpZ4bg4TDrFe4XXLFWL1TbXU27gBP3QccxV9mZICCrnjnYlJjXHOA==}
     engines: {node: '>=6.9.0'}
+
+  '@badrap/valita@0.4.2':
+    resolution: {integrity: sha512-Mwmr7k2iK0Yy0POLnAFUgab2mxKYeIsYXHY7sg3jo8XFsFHbG0SBmTcktXD0uW8N4WZePKf8s68QV7QDTGSdHA==}
+    engines: {node: '>= 18'}
 
   '@cloudflare/kv-asset-handler@0.3.4':
     resolution: {integrity: sha512-YLPHc8yASwjNkmcDMQMY35yiWjoKAKnhUbPRszBRS0YgH+IXtsMp61j+yTcnCE3oO2DgP0U3iejLC8FTtKDC8Q==}
@@ -1457,14 +1461,6 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  valibot@1.0.0-beta.2:
-    resolution: {integrity: sha512-XwAXmUPdB0Hikm6M18dD/a+j+57KA0dFlna5Yh77LBeeItSIQMwyZOjf8E2nWkhDtQ+Ie4GiaZPkLmaszH/4+w==}
-    peerDependencies:
-      typescript: '>=5'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
   validate-html-nesting@1.2.2:
     resolution: {integrity: sha512-hGdgQozCsQJMyfK5urgFcWEqsSSrK63Awe0t/IMR0bZ0QMtnuaiHzThW81guu3qx9abLi99NEuiaN6P9gVYsNg==}
 
@@ -1727,6 +1723,8 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.25.9
       '@babel/helper-validator-identifier': 7.25.9
+
+  '@badrap/valita@0.4.2': {}
 
   '@cloudflare/kv-asset-handler@0.3.4':
     dependencies:
@@ -2770,10 +2768,6 @@ snapshots:
       picocolors: 1.1.1
 
   util-deprecate@1.0.2: {}
-
-  valibot@1.0.0-beta.2(typescript@5.7.0-beta):
-    optionalDependencies:
-      typescript: 5.7.0-beta
 
   validate-html-nesting@1.2.2: {}
 

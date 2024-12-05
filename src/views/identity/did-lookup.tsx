@@ -1,11 +1,10 @@
 import { Match, Switch } from 'solid-js';
-import * as v from 'valibot';
 
 import { At } from '@atcute/client/lexicons';
 
 import { getDidDocument } from '~/api/queries/did-doc';
 import { resolveHandleViaAppView } from '~/api/queries/handle';
-import { serviceUrlString } from '~/api/types/strings';
+import { isServiceUrlString } from '~/api/types/strings';
 import { DID_OR_HANDLE_RE, isDid } from '~/api/utils/strings';
 
 import { useTitle } from '~/lib/navigation/router';
@@ -124,7 +123,7 @@ const DidLookupPage = () => {
 											{doc.service.map(({ id, type, serviceEndpoint }, idx) => {
 												const isString = typeof serviceEndpoint === 'string';
 												const isURL = isString && URL.canParse('' + serviceEndpoint);
-												const isServiceUrl = isString && v.is(serviceUrlString, serviceEndpoint);
+												const isServiceUrl = isString && isServiceUrlString(serviceEndpoint);
 
 												const isPDS = type === 'AtprotoPersonalDataServer';
 												const isLabeler = type === 'AtprotoLabeler';

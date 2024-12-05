@@ -1,13 +1,12 @@
 import { type FileSystemFileHandle, showSaveFilePicker } from 'native-file-system-adapter';
 import { createSignal } from 'solid-js';
-import * as v from 'valibot';
 
 import { At } from '@atcute/client/lexicons';
 
 import { getDidDocument } from '~/api/queries/did-doc';
 import { resolveHandleViaAppView, resolveHandleViaPds } from '~/api/queries/handle';
 import { getPdsEndpoint } from '~/api/types/did-doc';
-import { serviceUrlString } from '~/api/types/strings';
+import { isServiceUrlString } from '~/api/types/strings';
 import { DID_OR_HANDLE_RE, isDid } from '~/api/utils/strings';
 
 import { useTitle } from '~/lib/navigation/router';
@@ -202,7 +201,7 @@ const RepoExportPage = () => {
 								const input = ev.currentTarget;
 								const value = input.value;
 
-								if (value !== '' && !v.is(serviceUrlString, value)) {
+								if (value !== '' && isServiceUrlString(value)) {
 									input.setCustomValidity('Must be a valid service URL');
 								} else {
 									input.setCustomValidity('');

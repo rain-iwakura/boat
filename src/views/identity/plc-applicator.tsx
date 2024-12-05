@@ -8,8 +8,6 @@ import { At, ComAtprotoIdentityGetRecommendedDidCredentials } from '@atcute/clie
 import { P256Keypair, Secp256k1Keypair, verifySignature } from '@atproto/crypto';
 import * as uint8arrays from 'uint8arrays';
 
-import * as v from 'valibot';
-
 import { getDidDocument } from '~/api/queries/did-doc';
 import { resolveHandleViaAppView } from '~/api/queries/handle';
 import { getPlcAuditLogs } from '~/api/queries/plc';
@@ -608,16 +606,13 @@ const PlcUpdatePage = () => {
 						return;
 					}
 
-					const result = v.safeParse(updatePayload, json);
-					if (!result.success) {
-						const issue = result.issues[0];
-						const path = v.getDotPath(issue);
-
-						setError({ step: 4, message: `Error at '.${path}'\n${issue.message}` });
+					const result = updatePayload.try(json);
+					if (!result.ok) {
+						setError({ step: 4, message: result.message });
 						return;
 					}
 
-					states.payload = result.output;
+					states.payload = result.value;
 
 					setStep(5);
 				}}

@@ -1,5 +1,3 @@
-import * as v from 'valibot';
-
 import { At } from '@atcute/client/lexicons';
 
 import { didDocument, DidDocument } from '../types/did-doc';
@@ -50,5 +48,5 @@ export const getDidDocument = async ({
 		throw new Error(`unsupported did method`);
 	}
 
-	return v.parse(didDocument, rawDoc);
+	return didDocument.parse(rawDoc, { mode: 'passthrough' });
 };
